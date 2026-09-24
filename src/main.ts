@@ -13,7 +13,7 @@ import { apply, look } from './look';
 import { defs, type PatternName } from './patterns';
 import { img, type PoseId } from './character';
 import { ICONS } from './icons';
-import { esc, onRefresh } from './ui';
+import { esc, onRefresh, inSukhiPlay } from './ui';
 import { stationeryRoom } from './rooms/stationery';
 import { boxRoom } from './rooms/box';
 import { brandRoom } from './rooms/brand';
@@ -83,7 +83,7 @@ function home (main: HTMLElement): void {
       <div class="hello-words"><h2>Hi ${esc(l.name)}</h2><p>What shall we make today?</p></div>
     </section>
     <section class="tiles">${tiles}</section>
-    <p class="part">Part of <a href="https://sukhiplay.com" target="_blank" rel="noopener">Sukhi Play</a></p>`;
+    ${inSukhiPlay ? '' : '<p class="part">Part of <a href="https://sukhiplay.com" target="_blank" rel="noopener">Sukhi Play</a></p>'}`;
 }
 
 install();

@@ -320,6 +320,9 @@ img { display: block; max-width: 100%; }
 }
 .go svg { width: 24px; height: 24px; }
 .go:active { transform: translateY(4px); box-shadow: 0 1px 0 color-mix(in srgb, var(--accent) 55%, #000); }
+.print-status { margin: 10px 0 0; font-weight: 800; color: var(--accent2); }
+.print-status:empty { display: none; }
+.print-status[data-ok="no"] { color: #ff8a8a; }
 .go--second { background: var(--accent2); color: var(--on-accent2); box-shadow: 0 5px 0 color-mix(in srgb, var(--accent2) 55%, #000); }
 
 .quiet {
@@ -625,6 +628,7 @@ img { display: block; max-width: 100%; }
   overflow: hidden;
   cursor: pointer;
 }
+.photo-drop--off { cursor: default; text-align: center; padding: 18px; }
 .photo-drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .photo-look { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; font-weight: 800; opacity: .7; }
 .photo-look svg { width: 44px; height: 44px; }

@@ -43,11 +43,38 @@ export function heading (text: string): string {
 }
 
 export function printButton (label = 'Print it'): string {
-  return `<button type="button" class="go print">${ICONS.print}<span>${label}</span></button>`;
+  return `<button type="button" class="go print">${ICONS.print}<span>${label}</span></button>` +
+    '<p class="print-status" role="status"></p>';
 }
 
+/**
+ * Inside Sukhi Play there is no print dialog: the page goes straight to the
+ * printer, and Sukhi Play says afterwards whether it did (the
+ * "sukhiplay:print" event). So there, and only there, the studio says what is
+ * happening, because otherwise a tap would look like it did nothing. In a
+ * browser the print dialog is the answer and this stays quiet.
+ */
+export const inSukhiPlay = location.protocol === 'sukhiplay:';
+
+let status: HTMLElement | null = null;
+
+window.addEventListener('sukhiplay:print', (e) => {
+  const r = (e as CustomEvent<{ ok: boolean; reason?: string }>).detail ?? { ok: false };
+  if (!status) return;
+  status.textContent = r.ok ? 'Printed. Go and get it from the printer!'
+    : r.reason === 'too-soon' ? 'It is already on its way.'
+      : 'The printer did not answer. Ask a grown-up to check it.';
+  status.dataset.ok = r.ok || r.reason === 'too-soon' ? 'yes' : 'no';
+});
+
 export function wirePrint (root: HTMLElement): void {
-  root.querySelectorAll('.print').forEach((b) => b.addEventListener('click', () => window.print()));
+  root.querySelectorAll<HTMLButtonElement>('.print').forEach((b) => b.addEventListener('click', () => {
+    if (inSukhiPlay) {
+      status = b.nextElementSibling as HTMLElement | null;
+      if (status) { status.textContent = 'Sending it to the printer...'; delete status.dataset.ok; }
+    }
+    window.print();
+  }));
 }
 
 /** Buttons that behave as one choice, as radio buttons do. */

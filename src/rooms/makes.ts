@@ -1,18 +1,23 @@
 /** My makes: photos of finished things, and doodles, kept on this device. */
 import { all, save, remove, shrink, type Make } from '../makes';
 import { ICONS } from '../icons';
-import { esc, field } from '../ui';
+import { esc, field, inSukhiPlay } from '../ui';
 
 const urls: string[] = [];
 
 export async function makesRoom (main: HTMLElement): Promise<void> {
   urls.splice(0).forEach((u) => URL.revokeObjectURL(u));
-  main.innerHTML = `<form class="add">
-      <label class="photo-drop">
+  // Sukhi Play never opens a file browser, so there the photo is left out and
+  // a make is its name and its note. Doodles still arrive with their picture.
+  const picker = inSukhiPlay
+    ? `<div class="photo-drop photo-drop--off"><span class="photo-look">${ICONS.camera}<span>Photos can be added when the studio is open on a phone or tablet</span></span></div>`
+    : `<label class="photo-drop">
         <input type="file" accept="image/*" capture="environment" class="photo">
         <span class="photo-look">${ICONS.camera}<span>Add a photo</span></span>
         <img class="photo-preview" alt="" hidden>
-      </label>
+      </label>`;
+  main.innerHTML = `<form class="add">
+      ${picker}
       <div class="add-words">
         ${field('What did you make?', '<input class="title" maxlength="60" required placeholder="My pencil case">')}
         ${field('Anything to remember about it?', '<textarea class="note" rows="3" maxlength="500" placeholder="What it is made from, who it is for..."></textarea>')}
@@ -22,9 +27,10 @@ export async function makesRoom (main: HTMLElement): Promise<void> {
     <section class="shelf" aria-live="polite"></section>`;
 
   let photo: Blob | null = null;
-  const input = main.querySelector<HTMLInputElement>('.photo')!;
-  const preview = main.querySelector<HTMLImageElement>('.photo-preview')!;
-  input.addEventListener('change', async () => {
+  const input = main.querySelector<HTMLInputElement>('.photo');
+  const preview = main.querySelector<HTMLImageElement>('.photo-preview');
+  input?.addEventListener('change', async () => {
+    if (!preview) return;
     const file = input.files?.[0];
     if (!file) return;
     try {
