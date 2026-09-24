@@ -1,6 +1,8 @@
 /**
- * The workbench: choices on one side, the sheet on the other, with the colour
- * strip sitting on top of the sheet so a colour can be tried where it shows.
+ * The workbench: the choices, then the colour strip, the sheet and Print, in
+ * that order. Side by side on a wide screen, the choices on the left; one
+ * after another on a phone, so she works down the page and never has to go
+ * back up to the choices after seeing the sheet.
  *
  * Stationery and My brand both print sheets, so both use this. Each keeps its
  * own remembered state: which sheet, her words for each one, whether she is
@@ -33,22 +35,23 @@ export function bench (main: HTMLElement, kinds: KindInfo[], state: Bench, top =
     return { pattern: look().pattern, words: now.words[kind.id] ?? '', me: now.me, pose: now.pose };
   };
 
+  // One kind is a sheet opened on its own from a tile; several (My brand)
+  // still choose between them here.
   main.innerHTML = `${top}<div class="workbench">
     <section class="controls">
-      ${heading('What to make')}
-      <div class="chips kinds" role="radiogroup" aria-label="What to make">${kinds.map((k) =>
-        `<button type="button" class="chip" role="radio" data-kind="${k.id}" aria-checked="${k.id === kind.id}">${k.label}</button>`).join('')}</div>
+      ${kinds.length > 1 ? heading('What to make') + `<div class="chips kinds" role="radiogroup" aria-label="What to make">${kinds.map((k) =>
+        `<button type="button" class="chip" role="radio" data-kind="${k.id}" aria-checked="${k.id === kind.id}">${k.label}</button>`).join('')}</div>` : ''}
       <p class="hint">${kind.blurb}</p>
       ${kind.me ? `<label class="tick"><input type="checkbox" class="me" ${s.me ? 'checked' : ''}><span>Put me on it</span></label>` : ''}
       ${kind.pose || (kind.me && s.me) ? heading('Which you') + posePicker(s.pose === 'mix' && kind.id !== 'faces' ? l.pose : s.pose, kind.id === 'faces') : ''}
       ${heading('Pattern')}
       ${patternPicker()}
       ${kind.words ? heading('Words') + field(kind.words, `<input class="words" maxlength="40" placeholder="${esc(kind.start(l))}" value="${esc(s.words[kind.id] ?? '')}">`) : ''}
-      ${printButton()}
     </section>
     <section class="preview">
       ${colourBar()}
       <div class="print-area">${sheet(kind.id, opts(), l)}</div>
+      ${printButton()}
     </section>
   </div>`;
 

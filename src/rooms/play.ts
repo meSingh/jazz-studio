@@ -51,9 +51,8 @@ function poster (main: HTMLElement): void {
       ${heading('Pattern')}
       ${patternPicker()}
       <label class="tick"><input type="checkbox" class="p-dark" ${s.dark ? 'checked' : ''}><span>Dark background</span></label>
-      ${printButton()}
     </section>
-    <section class="preview">${colourBar()}<div class="print-area">${posterSheet(s.name, s.line, s.pose, s.dark, l)}</div></section>
+    <section class="preview">${colourBar()}<div class="print-area">${posterSheet(s.name, s.line, s.pose, s.dark, l)}</div>${printButton()}</section>
   </div>`;
   const redraw = (): void => {
     const now = posterState.get();
@@ -90,9 +89,8 @@ function secret (main: HTMLElement): void {
       ${heading('In secret code')}
       <div class="secret-out">${secretPreview(s.message)}</div>
       <p class="hint">This is pigpen, a real secret code. Each letter is the shape of its box in the key. Print it with the key, cut the key off, and give it to a friend.</p>
-      ${printButton('Print message and key')}
     </section>
-    <section class="preview">${colourBar()}<div class="print-area">${secretSheet(s.message, look())}</div></section>
+    <section class="preview">${colourBar()}<div class="print-area">${secretSheet(s.message, look())}</div>${printButton('Print message and key')}</section>
   </div>`;
   const msg = main.querySelector<HTMLTextAreaElement>('.s-msg')!;
   msg.addEventListener('input', () => {
@@ -132,7 +130,7 @@ function sparks (main: HTMLElement): void {
   main.querySelector('.diary')!.addEventListener('click', () => {
     const s = stationeryState.get();
     stationeryState.set({ kind: 'diary', words: { ...s.words, diary: current } });
-    location.hash = '#/stationery';
+    location.hash = '#/stationery/diary';
   });
 }
 

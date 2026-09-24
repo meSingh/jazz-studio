@@ -18,6 +18,7 @@ import { stationeryRoom } from './rooms/stationery';
 import { boxRoom } from './rooms/box';
 import { brandRoom } from './rooms/brand';
 import { playRoom, PLAYTHINGS } from './rooms/play';
+import { KINDS } from './sheets';
 import { makesRoom } from './rooms/makes';
 import { yoursRoom } from './rooms/yours';
 import { install, installed } from './install';
@@ -47,14 +48,17 @@ function render (keepScroll = false): void {
   // Start again can change this; the character list reads it every time.
   setKeepJazz(look().keepJazz);
   const name = look().name;
-  const thing = room === 'play' ? PLAYTHINGS.find((t) => t.id === sub) : undefined;
+  // A page inside a room: a plaything, or one sheet of stationery.
+  const sheetPage = room === 'stationery' ? KINDS.find((k) => k.id === sub) : undefined;
+  const thing = room === 'play' ? PLAYTHINGS.find((t) => t.id === sub)
+    : sheetPage ? { title: sheetPage.label } : undefined;
   document.title = room === 'home' ? `${name}'s Studio` : `${thing?.title ?? ROOMS[room].title} · ${name}'s Studio`;
   app.dataset.room = room;
   app.innerHTML = top(room, thing?.title) + '<main class="room"></main>';
   app.querySelector('.keep-btn')?.addEventListener('click', openKeep);
   const main = app.querySelector('main')!;
   if (room === 'home') home(main);
-  else if (room === 'stationery') stationeryRoom(main);
+  else if (room === 'stationery') stationeryRoom(main, sub);
   else if (room === 'box') boxRoom(main);
   else if (room === 'brand') brandRoom(main);
   else if (room === 'play') playRoom(main, sub);
@@ -70,8 +74,9 @@ function top (r: Room, thing?: string): string {
   const keep = installed() ? ''
     : `<button type="button" class="keep-btn" title="Keep it on this device">${ICONS.install}<span>Keep it on this device</span></button>`;
   if (r === 'home') return `<header class="top"><span class="brand-tag">${name}'s Studio</span>${keep}</header>`;
-  const back = thing ? '#/play' : '#/';
-  return `<header class="top"><a class="home-btn" href="${back}">${ICONS.back}<span>${thing ? 'Play' : 'Home'}</span></a>` +
+  // Inside a room's page, Back goes to the room; otherwise home.
+  const back = thing ? `#/${r}` : '#/';
+  return `<header class="top"><a class="home-btn" href="${back}">${ICONS.back}<span>${thing ? ROOMS[r].title : 'Home'}</span></a>` +
     `<h1 class="room-title">${ROOMS[r].icon}<span>${thing ?? ROOMS[r].title}</span></h1>${keep}</header>`;
 }
 

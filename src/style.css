@@ -342,21 +342,57 @@ img { display: block; max-width: 100%; }
 .quiet[data-sure="yes"] { opacity: 1; background: #c62f2f; color: #fff; }
 
 .preview { position: sticky; top: 12px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+/* The whole sheet in view: as tall as the window allows after the colour
+   strip and the Print button, and never wider than its column. */
 .print-area {
+  align-self: center;
+  max-width: 100%;
   background: #fff;
   border-radius: 4px;
   box-shadow: var(--shadow);
   overflow: hidden;
 }
-.sheet-svg { width: 100%; height: auto; }
+.print-area .sheet-svg { display: block; height: max(340px, calc(100dvh - 360px)); width: auto; max-width: 100%; }
+.preview > .go.print { margin-top: 0; }
+.print-status { text-align: center; }
+
+/* Stationery: a tile for each sheet */
+/* Six to a row on a laptop, so eleven sheets do not leave one on its own. */
+.sheets-hub { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 26px 20px; }
+.sheet-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 14px 18px;
+  background: var(--card);
+  border-radius: var(--radius);
+  color: inherit;
+  text-decoration: none;
+  box-shadow: var(--shadow);
+  transform: rotate(var(--tilt, 0deg));
+  transition: transform .25s cubic-bezier(.3, 1.5, .5, 1);
+}
+.sheet-tile:hover, .sheet-tile:focus-visible { transform: rotate(0deg) translateY(-6px); }
+.sheet-mini {
+  display: block;
+  aspect-ratio: 210 / 297;
+  margin-bottom: 8px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 6px 16px -6px rgb(0 0 0 / .45);
+}
+.sheet-mini svg { display: block; width: 100%; height: 100%; }
+.sheet-name { font-size: 19px; font-weight: var(--heavy); }
+.sheet-blurb { font-size: 14px; opacity: .72; }
 
 /* The colour strip, on top of every preview ------------------------ */
 
 .colourbar {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px 14px;
+  gap: 4px;
+  padding: 8px 12px;
   background: var(--card);
   border-radius: 16px;
   box-shadow: var(--shadow);
@@ -377,7 +413,7 @@ img { display: block; max-width: 100%; }
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 6px 12px 6px 8px;
+  padding: 4px 12px 4px 8px;
   border: 2px solid var(--line);
   border-radius: 999px;
   background: var(--p);
@@ -392,8 +428,8 @@ img { display: block; max-width: 100%; }
 .swatch {
   flex: none;
   position: relative;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   padding: 0;
   border: 3px solid var(--card);
   border-radius: 50%;
@@ -405,11 +441,11 @@ img { display: block; max-width: 100%; }
 .swatch[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--ink); transform: scale(1.1); }
 .letters {
   flex: none;
-  padding: 5px 12px;
+  padding: 3px 12px;
   border: 2px solid var(--line);
   border-radius: 10px;
   background: var(--card2);
-  font-size: 16px;
+  font-size: 15px;
   white-space: nowrap;
 }
 .letters[aria-pressed="true"] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 22%, var(--card2)); }
@@ -1057,7 +1093,12 @@ dialog.how { width: min(560px, calc(100vw - 32px)); }
      page than the paper makes the browser shrink the whole sheet to fit. */
   .workbench, .add, .brand-maker { grid-template-columns: minmax(0, 1fr); }
   .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .preview { position: static; order: -1; }
+  /* Top to bottom on a phone: choices, colours, the sheet, then Print. */
+  .preview { position: static; }
+  /* Still the whole sheet in view once it is scrolled to: as wide as the
+     column, unless that would make it taller than the screen. */
+  .print-area .sheet-svg { height: min(calc(100dvh - 120px), calc((100vw - 32px) * 1.414)); width: auto; }
+  .sheets-hub { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 18px 12px; }
   .brand-preview { max-width: 240px; margin: 0 auto; }
   .yours { grid-template-columns: 1fr; }
   .schemes { grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -1116,5 +1157,5 @@ dialog.how { width: min(560px, calc(100vw - 32px)); }
     box-shadow: none;
     border-radius: 0;
   }
-  .sheet-svg { width: 210mm; height: 297mm; }
+  .print-area .sheet-svg { width: 210mm; height: 297mm; max-width: none; }
 }

@@ -62,9 +62,8 @@ export function boxRoom (main: HTMLElement): void {
       <h2 class="box-title"><b>4</b>Print it and make it</h2>
       <p class="hint">Print at actual size, so it fits. Then:</p>
       <ol class="steps">${project.steps.map((st) => `<li>${st}</li>`).join('')}</ol>
-      ${printButton()}
     </section>
-    <section class="preview">${colourBar()}<div class="print-area">${wrapSheet(wrap, l.pattern, s.words, s.me, l, s.pose || l.pose)}</div></section>
+    <section class="preview">${colourBar()}<div class="print-area">${wrapSheet(wrap, l.pattern, s.words, s.me, l, s.pose || l.pose)}</div>${printButton()}</section>
   </div>`;
 
   const redraw = (): void => {
