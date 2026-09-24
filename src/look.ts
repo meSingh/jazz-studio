@@ -53,6 +53,8 @@ export interface Look {
    * out from keepJazz (see character.ts).
    */
   sets?: { jazz: boolean; sukhi: boolean };
+  /** A family's own people switched off (by person, see personOf): kept, but out of the list. */
+  hidden?: string[];
   /** From before Sukhi: once a family had added their own, whether Jazz stayed in the list too. */
   keepJazz: boolean;
   /** Whether the welcome, which asks their name and character, has been seen. */

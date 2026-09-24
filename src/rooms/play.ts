@@ -3,7 +3,7 @@
  * pigpen, sparks for when the diary page is blank, and a doodle pad.
  */
 import { look } from '../look';
-import { img, either, people, type PoseId } from '../character';
+import { img, either, people, brandKeyFor, type PoseId } from '../character';
 import { posterSheet } from '../play/poster';
 import { inviteSheet } from '../play/invite';
 import { secretSheet, layout, draw, type SecretTop } from '../play/pigpen';
@@ -12,7 +12,7 @@ import { save } from '../makes';
 import { ICONS } from '../icons';
 import {
   esc, field, heading, printButton, wirePrint, wireChoice, colourBar, wireColours,
-  patternPicker, wirePatterns, posePicker, refresh, remembered, sheetDesign, type Design
+  patternPicker, wirePatterns, posePicker, personPicker, refresh, remembered, sheetDesign, type Design
 } from '../ui';
 import { stationeryState } from './stationery';
 import { register, showing, designOf } from '../prints';
@@ -176,7 +176,8 @@ function secret (main: HTMLElement): void {
         ${([['logo', 'A logo'], ['me', 'A face'], ['none', 'Just the words']] as const).map(([id, label]) =>
           `<button type="button" class="chip" role="radio" data-top="${id}" aria-checked="${top.show === id}">${label}</button>`).join('')}
       </div>
-      ${top.show !== 'none' ? posePicker(top.pose, false, 'top-pose') + (top.show === 'logo' ? '<p class="hint">The logo is the brand of whoever you pick, from My brand.</p>' : '') : ''}
+      ${top.show === 'me' ? posePicker(top.pose, false, 'top-pose') : ''}
+      ${top.show === 'logo' ? personPicker(top.who ?? brandKeyFor(top.pose), 'top-who') + '<p class="hint">Whose brand goes at the top. Brands are made in My brand.</p>' : ''}
       ${field('Title', `<input class="s-title" maxlength="30" value="${esc(top.title)}">`)}
       ${field('Under the title (or leave empty)', `<input class="s-line" maxlength="50" value="${esc(top.line)}">`)}
     </section>
@@ -192,6 +193,7 @@ function secret (main: HTMLElement): void {
   const setTop = (change: Partial<SecretTop>): void => { secretState.set({ top: { ...topOf(), ...change } }); };
   wireChoice(main, 'top', (t) => { setTop({ show: t as SecretTop['show'] }); refresh(); });
   wireChoice(main, 'top-pose', (p) => { setTop({ pose: p }); refresh(); });
+  wireChoice(main, 'top-who', (w) => { setTop({ who: w }); refresh(); });
   main.querySelector<HTMLInputElement>('.s-title')!.addEventListener('input', (e) => { setTop({ title: (e.target as HTMLInputElement).value }); redraw(); });
   main.querySelector<HTMLInputElement>('.s-line')!.addEventListener('input', (e) => { setTop({ line: (e.target as HTMLInputElement).value }); redraw(); });
   wireColours(main, secretDesign);

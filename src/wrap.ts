@@ -12,7 +12,7 @@ import { fontOf, type Look } from './look';
 import { defs, type PatternName } from './patterns';
 import { fit } from './brand';
 import { W, CUT, esc, page, inkOf, check, disc, type Who } from './sheets';
-import { poses, type PoseId } from './character';
+import { poses, pose, personOf, type PoseId } from './character';
 
 export interface Wrap {
   /** Width round the thing (or across it), and height, in centimetres. */
@@ -37,7 +37,7 @@ export function wrapFits (wrap: Wrap): 'upright' | 'sideways' | false {
   return false;
 }
 
-export function wrapSheet (wrap: Wrap, pattern: PatternName, words: string, me: boolean, look: Look, who: Who = look.pose): string {
+export function wrapSheet (wrap: Wrap, pattern: PatternName, words: string, me: boolean, look: Look, who: Who = look.pose, own: Record<string, string> = {}): string {
   // Where a sheet has room for several copies, each has the next of the
   // characters she ticked: a pencil pot for her and one for her brother.
   const list = who === 'mix' ? poses().map((p) => p.id) : Array.isArray(who) ? who : [who || look.pose];
@@ -57,13 +57,15 @@ export function wrapSheet (wrap: Wrap, pattern: PatternName, words: string, me: 
   const bw = sideways ? ph : pw;
   const bh = sideways ? pw : ph;
   const panel = Math.max(0, bw - tab);
-  const text = words.trim();
   const r = me ? Math.min(bh * 0.32, 16, panel * 0.2) : 0;
-  const size = text ? fit(text, panel * 0.8 - r * 2.4, Math.min(16, bh * 0.28)) : 0;
+  // Each copy's words: its person's own, where she gave them some, or the sheet's.
+  const textFor = (k: number): string => (me ? own[personOf(pose(poseFor(k)))]?.trim() : '') || words.trim();
   const glue = `<pattern id="glue" width="3" height="3" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">` +
     `<rect width="3" height="3" fill="#fff"/><rect width="1" height="3" fill="${ink}" opacity=".15"/></pattern>`;
 
   const inner = (k: number): string => {
+    const text = textFor(k);
+    const size = text ? fit(text, panel * 0.8 - r * 2.4, Math.min(16, bh * 0.28)) : 0;
     let out = `<rect width="${panel}" height="${bh}" fill="url(#p1)"/>`;
     if (text) {
       const band = Math.max(size * 1.8, r * 2 + 4);

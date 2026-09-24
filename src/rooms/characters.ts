@@ -26,8 +26,7 @@
  */
 import { look, setLook } from '../look';
 import {
-  poses, pose, hasOwn, img, faceImg, saveOwn, removeOwn, nudgeOwn, renameOwn, people, setsNow, useSets,
-  JAZZ, SUKHI
+  poses, pose, img, faceImg, saveOwn, removeOwn, nudgeOwn, renameOwn, people, setsNow, isOn, setOn, personOf, ownPoses
 } from '../character';
 import { cutOut, photoOf, type Cut } from '../cutout';
 import { ICONS } from '../icons';
@@ -57,12 +56,6 @@ const POSE_IDEAS = 'holding a pencil and a sketchbook · pointing up with a big 
 
 const GEMINI = 'https://gemini.google.com/';
 
-/** The ready-made sets, each switched on or off in the tab. */
-const READY = [
-  { set: 'jazz' as const, name: 'Jazz', face: 'portrait', count: `${JAZZ.length} characters` },
-  { set: 'sukhi' as const, name: 'Sukhi', face: 'sukhi-smiling', count: `${SUKHI.length} characters` }
-];
-
 /** A family's character from before they could be named ("Character 2"), or never named: theirs. */
 const unnamedLabel = (label: string): boolean => !label.trim() || /^Character \d+$/.test(label.trim());
 
@@ -71,9 +64,13 @@ const key = /Mac|iPhone|iPad/.test(navigator.platform) ? 'Cmd+V' : 'Ctrl+V';
 const prompt = (id: string): string =>
   `<div class="prompt"><p>${PROMPTS[id]}</p><button type="button" class="quiet copy" data-copy="${id}">${ICONS.copy}<span>Copy</span></button></div>`;
 
+/** What a new picture of this person is called: nothing for yours, otherwise their name. */
+const labelFor = (key: string, name: string): string => (key === 'me' ? '' : name);
+
 export function characterTab (): string {
   const l = look();
   const mine = pose(l.pose);
+  const everyone = people(l, true);
   const addHow = inSukhiPlay
     ? `Copy a picture, then press ${key} here`
     : `Choose a picture or a photo, drop one here, or copy one and press ${key}`;
@@ -93,18 +90,26 @@ export function characterTab (): string {
     </section>
 
     <section class="card card--wide">
-      <div class="charsets" role="group" aria-label="Ready-made characters">
-        <span class="charsets-say">Characters to choose from</span>
-        ${READY.map((r) => {
-          const on = setsNow()[r.set];
-          // The last one on, with nothing of their own, stays on: the list is never empty.
-          const last = on && !hasOwn() && !setsNow()[r.set === 'jazz' ? 'sukhi' : 'jazz'];
-          return `<label class="charset${on ? ' charset--on' : ''}"><input type="checkbox" data-set="${r.set}" ${on ? 'checked' : ''} ${last ? 'disabled' : ''}>` +
-            `${faceImg(r.face, 'set-face')}<span><b>${r.name}</b><small>${r.count}</small></span></label>`;
+      <div class="charsets" role="group" aria-label="Characters">
+        <span class="charsets-say">Characters</span>
+        ${everyone.map((g) => {
+          const on = isOn(g.key);
+          // The last one on stays on: the list is never empty.
+          const last = on && everyone.filter((x) => isOn(x.key)).length === 1;
+          return `<label class="charset${on ? ' charset--on' : ''}"><input type="checkbox" data-person-on="${esc(g.key)}" ${on ? 'checked' : ''} ${last ? 'disabled' : ''}>` +
+            `${faceImg(g.poses[0].id, 'set-face')}<span><b>${esc(g.name)}</b><small>${g.poses.length} ${g.poses.length === 1 ? 'picture' : 'pictures'}</small></span></label>`;
         }).join('')}
       </div>
-      ${people(l).map((g) => `<div class="person">
-        <h3 class="person-name">${esc(g.name)}${g.key === 'me' && l.name ? ' <small>you</small>' : ''}</h3>
+      <p class="hint">Switch someone off to take them out of every picker, without losing their pictures.</p>
+      ${people(l).map((g) => {
+        const own = g.poses.some((p) => p.own) && g.key !== 'jazz' && g.key !== 'sukhi';
+        return `<div class="person">
+        <div class="person-head">
+          ${own
+            ? `<input class="person-name-edit" data-rename-person="${esc(g.key)}" value="${esc(g.name)}" maxlength="20" placeholder="${esc(l.name.trim() || 'Your name')}" aria-label="Name">`
+            : `<h3 class="person-name">${esc(g.name)}</h3>`}
+          ${g.key === 'me' || (l.name && g.name === l.name) ? '<small class="person-you">you</small>' : ''}
+        </div>
         <div class="chars" role="radiogroup" aria-label="${esc(g.name)}">
         ${g.poses.map((p) => `<figure class="char${p.own ? ' char--own' : ''}${p.id === mine.id ? ' char--mine' : ''}">
           <button type="button" class="char-pick" role="radio" data-choose="${p.id}" aria-checked="${p.id === mine.id}" aria-label="${esc(p.label || g.name)}">
@@ -112,8 +117,7 @@ export function characterTab (): string {
             ${p.id === mine.id ? '<span class="char-badge">Yours</span>' : ''}
           </button>
           ${p.own
-            ? `<input class="char-name" data-rename="${p.id}" value="${esc(unnamedLabel(p.label) ? l.name.trim() : p.label)}" maxlength="20" placeholder="${esc(l.name.trim() || 'Your name')}" aria-label="Whose character is this? Leave it as your name for yours">
-               <div class="char-tools">
+            ? `<div class="char-tools">
                  <button type="button" class="mini" data-nudge="${p.id}" data-dy="-0.06" title="Move the face up" aria-label="Move up">${ICONS.up}</button>
                  <button type="button" class="mini" data-nudge="${p.id}" data-dy="0.06" title="Move the face down" aria-label="Move down">${ICONS.down}</button>
                  <button type="button" class="mini" data-nudge="${p.id}" data-dx="-0.06" title="Move the face left" aria-label="Move left">${ICONS.left}</button>
@@ -124,16 +128,23 @@ export function characterTab (): string {
                </div>`
             : `<figcaption>${esc(p.label)}</figcaption>`}
         </figure>`).join('')}
+          <label class="char char--add char--more" tabindex="0" data-add-to="${esc(labelFor(g.key, g.name))}">
+            ${inSukhiPlay ? '' : '<input type="file" accept="image/*" multiple class="char-file">'}
+            <span class="char-plus">${ICONS.plus}</span>
+            <b>Add a picture</b>
+            <small>Another of ${esc(g.name || 'you')}</small>
+          </label>
         </div>
-      </div>`).join('')}
+      </div>`;
+      }).join('')}
       <div class="chars chars--add">
-        <label class="char char--add" tabindex="0">
-          ${inSukhiPlay ? '' : '<input type="file" accept="image/*" multiple class="char-file">'}
-          <span class="char-plus">${ICONS.plus}</span>
+        <label class="char char--add char--new" tabindex="0">
+          ${inSukhiPlay ? '' : '<input type="file" accept="image/*" class="char-file">'}
+          <span class="char-plus">${ICONS.person}</span>
           <b>Add a character</b>
           <small>${addHow}</small>
         </label>
-        <p class="hint add-who">Yours, or a friend's: give a friend's the friend's name, and it goes on their stickers, labels and tags with their name.</p>
+        <p class="hint add-who">A new character is someone new: you, a brother or sister, or a friend. You give them a name, and then can add more pictures of them.</p>
       </div>
       <p class="hint char-status" role="status"></p>
     </section>
@@ -232,14 +243,49 @@ function choose (cut: Cut | null, photo: Cut): Promise<Cut | null> {
 }
 
 /**
+ * Who a new character is: their name, or "It's me". Resolves to the name, ''
+ * for the person using the studio, or null for cancel.
+ */
+function whoIs (picked: Cut): Promise<string | null> {
+  const url = URL.createObjectURL(picked.blob);
+  return new Promise((resolve) => {
+    const d = document.createElement('dialog');
+    d.className = 'ask who-is';
+    const me = look().name.trim();
+    d.innerHTML = `<div class="ask-art"><img class="ask-thumb" src="${url}" alt=""></div>
+      <h2>Who is this?</h2>
+      <div class="ask-body"><p>Their name goes with them: on their stickers, labels and tags, and in every list of characters.</p>
+        <label class="field"><span>Name</span><input class="who-name" maxlength="20" placeholder="Their name"></label>
+      </div>
+      <div class="ask-buttons">
+        <button type="button" class="go go--ghost who-me">It's me${me ? `, ${esc(me)}` : ''}</button>
+        <button type="button" class="go who-go">Add them</button>
+      </div>
+      <button type="button" class="quiet who-cancel">Cancel</button>`;
+    document.body.append(d);
+    const input = d.querySelector<HTMLInputElement>('.who-name')!;
+    const done = (v: string | null): void => { d.close(); d.remove(); URL.revokeObjectURL(url); resolve(v); };
+    d.querySelector('.who-me')!.addEventListener('click', () => done(''));
+    d.querySelector('.who-go')!.addEventListener('click', () => { if (input.value.trim()) done(input.value.trim()); else input.focus(); });
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && input.value.trim()) done(input.value.trim()); });
+    d.querySelector('.who-cancel')!.addEventListener('click', () => done(null));
+    d.addEventListener('cancel', () => done(null));
+    d.showModal();
+    input.focus();
+  });
+}
+
+/**
  * Turns pictures into characters, one at a time, asking how to keep each.
  * Adding one no longer takes Jazz out of the list: which ready-made sets are
  * in it is its own choice now, so a look from before that is made explicit
  * first, as it stood. From the welcome, the first becomes theirs (`mine`).
  * Returns how many were added.
  */
-export async function addAll (files: File[], main: HTMLElement, mine = false): Promise<number> {
+export async function addAll (files: File[], main: HTMLElement, mine = false, label?: string): Promise<number> {
   if (!look().sets) setLook({ sets: setsNow() });
+  // A new character is a new person: asked their name once, after the first picture.
+  let called = mine ? '' : label;
   const status = main.querySelector<HTMLElement>('.char-status');
   const say = (t: string): void => { if (status) status.textContent = t; };
   const pictures = files.filter((f) => f.type.startsWith('image/'));
@@ -263,11 +309,16 @@ export async function addAll (files: File[], main: HTMLElement, mine = false): P
       say('');
       const picked = await choose(cut, photo);
       if (!picked) continue;
+      if (called === undefined) {
+        const answer = await whoIs(picked);
+        if (answer === null) continue;
+        called = answer;
+      }
       const id = `c-${crypto.randomUUID()}`;
       const isPhoto = (picked as Cut & { photo?: boolean }).photo === true;
-      // No name means theirs; a friend's is given the friend's name.
+      // No name means theirs; anyone else's is given their name.
       await saveOwn({
-        id, label: '', added: Date.now(), photo: isPhoto,
+        id, label: called ?? '', added: Date.now(), photo: isPhoto,
         blob: picked.blob, w: picked.w, h: picked.h, cx: picked.cx, cy: picked.cy, d: picked.d
       });
       if (mine && !added) setLook({ pose: id });
@@ -284,6 +335,8 @@ export async function addAll (files: File[], main: HTMLElement, mine = false): P
 }
 
 let pasteTarget: HTMLElement | null = null;
+/** Whose picture a paste adds: a person's, after their Add a picture was tapped; otherwise a new character. */
+let pasteFor: string | undefined;
 
 // One listener for the whole page, pointed at whichever Character tab is open.
 window.addEventListener('paste', (e) => {
@@ -292,49 +345,65 @@ window.addEventListener('paste', (e) => {
   const files = [...(e.clipboardData?.files ?? [])].filter((f) => f.type.startsWith('image/'));
   if (!files.length) return;
   e.preventDefault();
-  void addAll(files, pasteTarget);
+  const label = pasteFor;
+  pasteFor = undefined;
+  void addAll(files, pasteTarget, false, label);
 });
 
 export function wireCharacterTab (main: HTMLElement): void {
   pasteTarget = main;
+  pasteFor = undefined;
 
   const name = main.querySelector<HTMLInputElement>('.name')!;
   name.addEventListener('input', () => { main.querySelector('.me-hello b')!.textContent = name.value.trim() || 'there'; });
   name.addEventListener('change', () => { setLook({ name: name.value.trim() }); refresh(); });
 
-  const tile = main.querySelector<HTMLElement>('.char--add')!;
-  main.querySelector<HTMLInputElement>('.char-file')?.addEventListener('change', (e) => {
-    const input = e.target as HTMLInputElement;
-    void addAll([...(input.files ?? [])], main);
-    input.value = '';
-  });
-  tile.addEventListener('dragover', (e) => { e.preventDefault(); tile.dataset.over = 'yes'; });
-  tile.addEventListener('dragleave', () => { delete tile.dataset.over; });
-  tile.addEventListener('drop', (e) => {
-    e.preventDefault();
-    delete tile.dataset.over;
-    void addAll([...(e.dataTransfer?.files ?? [])], main);
+  // A new character, or another picture of someone: chosen, dropped, or pasted.
+  main.querySelectorAll<HTMLElement>('.char--add').forEach((tile) => {
+    const label = tile.classList.contains('char--new') ? undefined : tile.dataset.addTo ?? '';
+    const add = (files: File[]): void => { void addAll(files, main, false, label); };
+    tile.querySelector<HTMLInputElement>('.char-file')?.addEventListener('change', (e) => {
+      const input = e.target as HTMLInputElement;
+      add([...(input.files ?? [])]);
+      input.value = '';
+    });
+    tile.addEventListener('dragover', (e) => { e.preventDefault(); tile.dataset.over = 'yes'; });
+    tile.addEventListener('dragleave', () => { delete tile.dataset.over; });
+    tile.addEventListener('drop', (e) => {
+      e.preventDefault();
+      delete tile.dataset.over;
+      add([...(e.dataTransfer?.files ?? [])]);
+    });
+    // Inside Sukhi Play there is no file browser: a tap says whose the next paste is.
+    if (inSukhiPlay) {
+      tile.addEventListener('click', () => {
+        pasteFor = label;
+        const status = main.querySelector<HTMLElement>('.char-status');
+        if (status) status.textContent = label === undefined ? `Now copy a picture and press ${key} for the new character.` : `Now copy a picture and press ${key} to add it.`;
+      });
+    }
   });
 
-  main.querySelectorAll<HTMLButtonElement>('[data-choose]').forEach((b) =>
-    b.addEventListener('click', () => { setLook({ pose: b.dataset.choose! }); refresh(); }));
-
-  main.querySelectorAll<HTMLInputElement>('[data-set]').forEach((box) => box.addEventListener('change', () => {
-    const next = { ...setsNow(), [box.dataset.set!]: box.checked };
-    setLook({ sets: next });
-    useSets(look());
-    // Their character goes with its set: they get the first one left.
+  main.querySelectorAll<HTMLInputElement>('[data-person-on]').forEach((box) => box.addEventListener('change', () => {
+    setOn(box.dataset.personOn!, box.checked);
+    // Their own character goes with them: the first one left instead.
     if (!poses().some((p) => p.id === look().pose)) setLook({ pose: poses()[0].id });
     refresh();
   }));
 
-  main.querySelectorAll<HTMLButtonElement>('[data-nudge]').forEach((b) => b.addEventListener('click', async () => {
-    await nudgeOwn(b.dataset.nudge!, { dx: Number(b.dataset.dx || 0), dy: Number(b.dataset.dy || 0), zoom: Number(b.dataset.zoom || 0) });
+  main.querySelectorAll<HTMLInputElement>('[data-rename-person]').forEach((input) => input.addEventListener('change', async () => {
+    // Every picture of theirs takes the new name. As your own name, they are yours.
+    const key = input.dataset.renamePerson!;
+    const value = input.value.trim() === look().name.trim() ? '' : input.value.trim();
+    for (const p of ownPoses().filter((x) => personOf(x) === key)) await renameOwn(p.id, value);
     refresh();
   }));
 
-  main.querySelectorAll<HTMLInputElement>('[data-rename]').forEach((input) => input.addEventListener('change', async () => {
-    await renameOwn(input.dataset.rename!, input.value);
+  main.querySelectorAll<HTMLButtonElement>('[data-choose]').forEach((b) =>
+    b.addEventListener('click', () => { setLook({ pose: b.dataset.choose! }); refresh(); }));
+
+  main.querySelectorAll<HTMLButtonElement>('[data-nudge]').forEach((b) => b.addEventListener('click', async () => {
+    await nudgeOwn(b.dataset.nudge!, { dx: Number(b.dataset.dx || 0), dy: Number(b.dataset.dy || 0), zoom: Number(b.dataset.zoom || 0) });
     refresh();
   }));
 

@@ -12,7 +12,7 @@
 import { light, fontOf, whose, type Look, type Brand } from './look';
 import { defs, type PatternName } from './patterns';
 import { face, figure, poses, pose as poseOf, nameFor, personOf, brandFor, brandKeyFor, type PoseId } from './character';
-import { logo, logoMark, logoOutline, fit } from './brand';
+import { logo, logoOutline, fit } from './brand';
 
 export type Kind =
   | 'stickers' | 'faces' | 'bookmarks' | 'labels' | 'cover' | 'diary'
@@ -488,13 +488,16 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
     }
 
     case 'cards': {
-      // The card says who she is; the logo's own words would only say it
-      // again, so the card has just the logo's middle, and the words are hers.
+      // A character card: the brand's person standing in a big circle of her
+      // pattern, cropped by the card's edge, and her words beside them. The
+      // logo's own words would only repeat the card's, so the card has none.
       const lk = branded(o.brandKey ?? brandKeyFor(look.pose));
+      const hero = lk.brand.pose ?? look.pose;
       const name = ex('name');
       const role = ex('role');
       const more = ex('more');
       const studio = ex('studio') === '1' ? lk.brand.name.toUpperCase() : '';
+      const initial = (lk.brand.name.trim()[0] ?? 'S').toUpperCase();
       let body = '';
       for (let i = 0; i < 10; i++) {
         const x = 17.5 + (i % 2) * 90;
@@ -502,15 +505,19 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
         const clip = `cc${i}`;
         body += `<clipPath id="${clip}"><rect x="${x}" y="${y}" width="85" height="55" rx="3"/></clipPath>` +
           `<rect x="${x}" y="${y}" width="85" height="55" rx="3" fill="#fff"/>` +
-          // A panel of her pattern down the left, with her mark on it.
-          `<rect x="${x}" y="${y}" width="30" height="55" fill="url(#p1)" clip-path="url(#${clip})"/>` +
-          `<rect x="${x + 30}" y="${y}" width="1.2" height="55" fill="${lk.accent}"/>` +
-          logoMark(lk, x + 15, y + 27.5, 10.5) +
-          (studio ? `<text x="${x + 36}" y="${y + 11}" font-size="${fit(studio, 44, 3)}" font-weight="800" fill="${lk.accent}" letter-spacing=".5">${esc(studio)}</text>` : '') +
-          `<text x="${x + 36}" y="${y + (studio ? 24 : 21)}" font-size="${fit(name, 45, 8.5)}" font-weight="900" fill="${ink}">${esc(name)}</text>` +
-          (role ? `<text x="${x + 36}" y="${y + (studio ? 31 : 28)}" font-size="${fit(role, 45, 3.6)}" font-weight="700" fill="${lk.accent}">${esc(role)}</text>` : '') +
-          `<path d="M${x + 36} ${y + 37} H${x + 60}" stroke="${lk.accent2}" stroke-width="1.2" stroke-linecap="round"/>` +
-          (more ? `<text x="${x + 36}" y="${y + 45}" font-size="${fit(more, 45, 3.3)}" fill="${ink}" opacity=".8">${esc(more)}</text>` : '') +
+          `<g clip-path="url(#${clip})">` +
+          `<circle cx="${x + 71}" cy="${y + 31}" r="28" fill="url(#p1)"/>` +
+          `<circle cx="${x + 71}" cy="${y + 31}" r="21" fill="${lk.accent2}" opacity=".9"/>` +
+          (lk.brand.me
+            ? figure(hero, x + 50, y + 8, 42, 47)
+            : `<text x="${x + 71}" y="${y + 40}" text-anchor="middle" font-size="26" font-weight="900" fill="${on(lk.accent2)}">${esc(initial)}</text>`) +
+          `<rect x="${x}" y="${y + 51}" width="44" height="4" fill="${lk.accent}"/>` +
+          `</g>` +
+          (studio ? `<text x="${x + 6}" y="${y + 10}" font-size="${fit(studio, 32, 2.8)}" font-weight="800" fill="${lk.accent}" letter-spacing=".5">${esc(studio)}</text>` : '') +
+          `<text x="${x + 6}" y="${y + (studio ? 22 : 19)}" font-size="${fit(name, 33, 8.5)}" font-weight="900" fill="${ink}">${esc(name)}</text>` +
+          (role ? `<text x="${x + 6}" y="${y + (studio ? 29 : 26)}" font-size="${fit(role, 33, 3.4)}" font-weight="700" fill="${lk.accent}">${esc(role)}</text>` : '') +
+          `<g fill="${lk.accent2}">${[0, 1, 2].map((d) => `<circle cx="${x + 7 + d * 3.4}" cy="${y + 35}" r="1"/>`).join('')}</g>` +
+          (more ? `<text x="${x + 6}" y="${y + 43}" font-size="${fit(more, 33, 3)}" fill="${ink}" opacity=".8">${esc(more)}</text>` : '') +
           `<rect x="${x}" y="${y}" width="85" height="55" rx="3" fill="none" stroke="${ink}" stroke-width=".25" opacity=".4"/>`;
       }
       return page(pat(0.6), body, 'Business cards', font);

@@ -11,8 +11,8 @@
 import { look, type LogoStyle } from '../look';
 import { logoSvg, LOGO_STYLES } from '../brand';
 import { BRAND_KINDS, sheet } from '../sheets';
-import { people, brandFor, setBrand, brandKeyFor, faceImg } from '../character';
-import { esc, field, heading, wireChoice, posePicker, remembered, refresh } from '../ui';
+import { people, brandFor, setBrand, brandKeyFor } from '../character';
+import { esc, field, heading, wireChoice, posePicker, personPicker, remembered, refresh } from '../ui';
 import { bench, designFor, reopen, type BenchState, type SheetSettings } from './bench';
 import { register } from '../prints';
 
@@ -24,13 +24,14 @@ export function brandRoom (main: HTMLElement, sub = ''): void {
   const groups = people(look());
   const key = state.get().who ?? brandKeyFor(look().pose);
   const b = brandFor(key);
+  // A brand is a person's, so only their pictures can go in it.
+  const mine = groups.find((g) => g.key === key)?.poses.map((p) => p.id) ?? [];
   // The logo is shown in the design of the sheet it is being made for.
   const l = { ...designFor(state, state.get().kind).get(), brand: b };
   const top = `<section class="brand-maker">
     <div class="brand-preview">${logoSvg(l, 'brand-logo')}</div>
     <div class="brand-controls">
-      ${groups.length > 1 ? heading('Whose brand') + `<div class="chips whose" role="radiogroup" aria-label="Whose brand">${groups.map((g) =>
-        `<button type="button" class="chip chip--who" role="radio" data-whose="${esc(g.key)}" aria-checked="${g.key === key}">${faceImg(g.poses[0].id, 'chip-face')}<span>${esc(g.name)}</span></button>`).join('')}</div>` : ''}
+      ${groups.length > 1 ? heading('Whose brand') + personPicker(key, 'whose') : ''}
       ${heading('Logo')}
       <div class="chips" role="radiogroup" aria-label="Logo style">${LOGO_STYLES.map((s) =>
         `<button type="button" class="chip" role="radio" data-logo="${s.id}" aria-checked="${s.id === b.style}">${s.label}</button>`).join('')}</div>
@@ -42,7 +43,7 @@ export function brandRoom (main: HTMLElement, sub = ''): void {
         <button type="button" class="chip" role="radio" data-middle="me" aria-checked="${b.me}">Picture in the middle</button>
         <button type="button" class="chip" role="radio" data-middle="letter" aria-checked="${!b.me}">Initial</button>
       </div>
-      ${b.me ? posePicker(b.pose ?? l.pose, false, 'logo-pose') : ''}
+      ${b.me ? posePicker(b.pose ?? mine[0], false, 'logo-pose', mine) : ''}
       <p class="hint">This brand goes on the diary covers and pages with ${esc(groups.find((g) => g.key === key)?.name ?? 'them')} on, and on these cards and stickers.</p>
     </div>
   </section>`;

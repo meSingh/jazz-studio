@@ -854,8 +854,18 @@ img { display: block; max-width: 100%; }
 .charset:has(input:disabled) { cursor: default; }
 .charset:has(input:focus-visible) { outline: 3px solid var(--accent2); outline-offset: 2px; }
 .person { margin-top: 18px; }
-.person-name { margin: 0 0 8px; font-size: 16px; font-weight: var(--heavy); }
-.person-name small { font-size: 14px; font-weight: 700; opacity: .7; margin-left: 4px; }
+.person-head { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; }
+.person-name { margin: 0; font-size: 16px; font-weight: var(--heavy); }
+.person-name-edit {
+  max-width: 220px; padding: 6px 10px; border: 2px solid var(--line); border-radius: 10px;
+  background: var(--paper); color: var(--ink); font: inherit; font-size: 16px; font-weight: var(--heavy);
+}
+.person-name-edit:focus { outline: none; border-color: var(--accent); }
+.person-you { font-size: 13px; font-weight: 700; opacity: .7; }
+.char--more .char-plus svg, .char--new .char-plus svg { width: 26px; height: 26px; }
+.char--more { min-height: 0; }
+dialog.who-is .field { text-align: left; }
+dialog.who-is .who-cancel { display: block; margin: 12px auto 0; }
 .chars--add { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 18px; }
 .chars--add .char--add { flex: 0 0 150px; }
 .add-who { flex: 1 1 200px; max-width: 420px; margin: 0; }

@@ -13,7 +13,7 @@ export const LOGO_STYLES: Array<{ id: LogoStyle; label: string }> = [
   { id: 'badge', label: 'Badge' },
   { id: 'stamp', label: 'Stamp' },
   { id: 'ribbon', label: 'Ribbon' },
-  { id: 'monogram', label: 'Crest' }
+  { id: 'monogram', label: 'Tag' }
 ];
 
 const esc = (s: string): string =>
@@ -86,16 +86,15 @@ export function logo (look: Look, x: number, y: number, size: number): string {
       break;
     }
     default: {
-      // A crest: a shield with the initial large, a line across the top, and
-      // the name on a banner that runs out past its sides.
-      const shield = 'M50 4 L90 16 V48 C90 74 70 90 50 97 C30 90 10 74 10 48 V16Z';
-      body = `<path d="${shield}" fill="${look.accent}"/>` +
-        `<path d="${shield}" transform="translate(50 50) scale(.88) translate(-50 -50)" fill="none" stroke="${on(look.accent)}" stroke-width="1" opacity=".55"/>` +
-        `<text x="50" y="27" text-anchor="middle" font-size="${fit(b.tagline.toUpperCase(), 52, 4.4)}" fill="${on(look.accent)}" ${font} letter-spacing=".6" opacity=".85">${esc(b.tagline.toUpperCase())}</text>` +
-        `<text x="50" y="57" text-anchor="middle" font-size="32" fill="${on(look.accent)}" ${font}>${initial}</text>` +
-        `<path d="M2 63 L10 63 L10 77 L2 77 L6 70Z M98 63 L90 63 L90 77 L98 77 L94 70Z" fill="${look.accent2}" opacity=".75"/>` +
-        `<rect x="8" y="61" width="84" height="16" rx="2" fill="${look.accent2}"/>` +
-        `<text x="50" y="72.4" text-anchor="middle" font-size="${fit(b.name, 76, 9)}" fill="${on(look.accent2)}" ${font}>${esc(b.name)}</text>`;
+      // A name tag: a rounded tag in her colour, the picture (or initial)
+      // in a ringed circle at one end, the name large beside it and the line
+      // under that. Like a sticker on a laptop, not a coat of arms.
+      body = `<rect x="2" y="27" width="96" height="46" rx="23" fill="${look.accent}"/>` +
+        `<rect x="4.5" y="29.5" width="91" height="41" rx="20.5" fill="none" stroke="${on(look.accent)}" stroke-width=".6" stroke-dasharray="1.6 1.4" opacity=".55"/>` +
+        `<circle cx="25" cy="50" r="19.5" fill="${on(look.accent)}"/>` +
+        inner(25, 50, 17.5) +
+        `<text x="49" y="50" font-size="${fit(b.name, 45, 10)}" fill="${on(look.accent)}" ${font}>${esc(b.name)}</text>` +
+        `<text x="49" y="60" font-size="${fit(b.tagline, 45, 4.6)}" fill="${on(look.accent)}" ${font} opacity=".85">${esc(b.tagline)}</text>`;
     }
   }
   return `<g transform="translate(${x} ${y}) scale(${u})">${body}</g>`;
@@ -111,7 +110,7 @@ export function logoOutline (style: LogoStyle): string {
     case 'badge': return 'M50 -1.5 A51.5 51.5 0 1 1 49.99 -1.5Z';
     case 'stamp': return 'M11 1 H89 V99 H11Z';
     case 'ribbon': return 'M8 51 H36.4 A25 25 0 1 1 63.6 51 H92 A8 8 0 0 1 100 59 V89 A8 8 0 0 1 92 97 H8 A8 8 0 0 1 0 89 V59 A8 8 0 0 1 8 51Z';
-    default: return 'M50 1 L93 13.5 V60 H100 V79 H90.5 C85 89 70 96 50 100 C30 96 15 89 9.5 79 H0 V60 H7 V13.5Z';
+    default: return 'M24.5 24.5 H75.5 A25.5 25.5 0 0 1 75.5 75.5 H24.5 A25.5 25.5 0 0 1 24.5 24.5Z';
   }
 }
 

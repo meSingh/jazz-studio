@@ -147,10 +147,26 @@ export function setsNow (): { jazz: boolean; sukhi: boolean } {
 export const hasOwn = (): boolean => own.length > 0;
 export const ownPoses = (): Pose[] => own;
 
-/** The character list: a family's own first, then Jazz's and Sukhi's where they are on. */
+/** Whether a person is in the list: Jazz and Sukhi by their sets, anyone else unless switched off. */
+export function isOn (key: string): boolean {
+  if (key === 'jazz' || key === 'sukhi') return setsNow()[key];
+  return !(look().hidden ?? []).includes(key);
+}
+
+/** Switches a person on or off. */
+export function setOn (key: string, on: boolean): void {
+  if (key === 'jazz' || key === 'sukhi') {
+    setLook({ sets: { ...setsNow(), [key]: on } });
+  } else {
+    const hidden = (look().hidden ?? []).filter((k) => k !== key);
+    setLook({ hidden: on ? hidden : [...hidden, key] });
+  }
+  useSets(look());
+}
+
+/** The character list: a family's own first, then Jazz's and Sukhi's, everyone who is switched on. */
 export function poses (): Pose[] {
-  const on = setsNow();
-  const list = [...own, ...(on.jazz ? JAZZ : []), ...(on.sukhi ? SUKHI : [])];
+  const list = [...own, ...JAZZ, ...SUKHI].filter((p) => isOn(personOf(p)));
   return list.length ? list : JAZZ;
 }
 
@@ -170,7 +186,10 @@ const unnamed = (label: string): boolean => {
 /** Which person a character belongs to. */
 export function personOf (p: Pose): string {
   if (p.who) return p.who.toLowerCase();
-  if (!unnamed(p.label)) return `own:${p.label.trim().toLowerCase()}`;
+  // A picture added to Jazz or Sukhi is theirs, with theirs.
+  const called = p.label.trim().toLowerCase();
+  if (called === 'jazz' || called === 'sukhi') return called;
+  if (!unnamed(p.label)) return `own:${called}`;
   // Theirs. Someone whose name is Jazz (on Jazz's own iPad) is Jazz, so what
   // she adds goes with her ready-made ones rather than making a second Jazz.
   const me = look().name.trim().toLowerCase();
@@ -190,9 +209,10 @@ export function nameFor (id: PoseId, l: Look): string {
 }
 
 /** The people in the list, in order, each with their characters: for pickers that group by person. */
-export function people (l: Look): Array<{ key: string; name: string; poses: Pose[] }> {
+export function people (l: Look, all = false): Array<{ key: string; name: string; poses: Pose[] }> {
   const out: Array<{ key: string; name: string; poses: Pose[] }> = [];
-  for (const p of poses()) {
+  // `all`: everyone, switched on or not, for the switches in Make it yours.
+  for (const p of all ? everyone() : poses()) {
     const key = personOf(p);
     let group = out.find((g) => g.key === key);
     if (!group) {

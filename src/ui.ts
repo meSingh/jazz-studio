@@ -264,9 +264,10 @@ export function wirePatterns (root: HTMLElement, target: DesignTarget): void {
 
 /* Poses ------------------------------------------------------------------ */
 
-export function posePicker (current: PoseId | 'mix', mix: boolean, attr = 'pose'): string {
-  const list = poses();
-  const groups = people(look());
+export function posePicker (current: PoseId | 'mix', mix: boolean, attr = 'pose', only?: PoseId[]): string {
+  // `only`: one person's pictures, where the choice of person is made already.
+  const list = only ? poses().filter((p) => only.includes(p.id)) : poses();
+  const groups = only ? [] : people(look());
   // With more than one person, each has their own row and name, so Jazz's
   // Smiling and Sukhi's Smiling are not two of the same.
   if (groups.length > 1 && !mix) {
@@ -314,6 +315,12 @@ export function toggleWho (current: Who, id: string): Who {
     if (list.length > 1) list.splice(at, 1);
   } else list.push(id);
   return list.length === 1 ? list[0] : list;
+}
+
+/** A choice of person, by name and face: for choosing whose brand, where their pictures do not matter. */
+export function personPicker (current: string, attr: string): string {
+  return `<div class="chips whose" role="radiogroup" aria-label="Whose">${people(look()).map((g) =>
+    `<button type="button" class="chip chip--who" role="radio" data-${attr}="${esc(g.key)}" aria-checked="${g.key === current}">${faceImg(g.poses[0].id, 'chip-face')}<span>${esc(g.name)}</span></button>`).join('')}</div>`;
 }
 
 /* Asking first ------------------------------------------------------------ */

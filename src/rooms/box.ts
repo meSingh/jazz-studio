@@ -9,14 +9,15 @@
 import { PROJECTS } from '../projects';
 import { wrapSheet, wrapFits, measureDiagram, fmt } from '../wrap';
 import {
-  esc, field, printButton, wirePrint, wireChoice, colourBar, wireColours,
+  esc, field, heading, printButton, wirePrint, wireChoice, colourBar, wireColours,
   patternPicker, wirePatterns, whoPicker, toggleWho, refresh, remembered, sheetDesign, type Design
 } from '../ui';
 import { register, showing, designOf } from '../prints';
 import type { Who } from '../sheets';
 import { look } from '../look';
+import { poses, pose, personOf, nameFor, faceImg } from '../character';
 
-interface WrapSettings { project: string; width: number; height: number; tab: boolean; words: string; me: boolean; pose: Who | '' }
+interface WrapSettings { project: string; width: number; height: number; tab: boolean; words: string; me: boolean; pose: Who | ''; names?: Record<string, string> }
 
 const state = remembered<WrapSettings & { design?: Design }>(
   'jazz-studio-box', { project: 'pencil-pot', width: 15.5, height: 10, tab: true, words: '', me: true, pose: '' });
@@ -62,20 +63,20 @@ export function boxRoom (main: HTMLElement): void {
       ${patternPicker(design)}
       ${field('Words on it (or leave empty)', `<input class="words" maxlength="24" placeholder="Pens" value="${esc(s.words)}">`)}
       <label class="tick"><input type="checkbox" class="me" ${s.me ? 'checked' : ''}><span>Put me on it</span></label>
-      ${s.me ? whoPicker(s.pose || l.pose, 'Where two or more fit on a sheet, tick someone for each: every wrap gets the next one.') : ''}
+      ${s.me ? whoPicker(s.pose || l.pose, 'Where two or more fit on a sheet, tick someone for each: every wrap gets the next one.') + wordsEach(s) : ''}
 
       <h2 class="box-title"><b>4</b>Print it and make it</h2>
       <p class="hint">Print at actual size, so it fits. Then:</p>
       <ol class="steps">${project.steps.map((st) => `<li>${st}</li>`).join('')}</ol>
     </section>
-    <section class="preview">${colourBar(design)}<div class="print-area">${wrapSheet(wrap, l.pattern, s.words, s.me, l, s.pose || l.pose)}</div>${printButton()}</section>
+    <section class="preview">${colourBar(design)}<div class="print-area">${wrapSheet(wrap, l.pattern, s.words, s.me, l, s.pose || l.pose, s.names)}</div>${printButton()}</section>
   </div>`;
 
   const redraw = (): void => {
     const now = state.get();
     const w = { width: now.width, height: now.height, tab: now.tab, title: project.title };
     const d = design.get();
-    main.querySelector('.print-area')!.innerHTML = wrapSheet(w, d.pattern, now.words, now.me, d, now.pose || d.pose);
+    main.querySelector('.print-area')!.innerHTML = wrapSheet(w, d.pattern, now.words, now.me, d, now.pose || d.pose, now.names);
     main.querySelector('.measure')!.innerHTML = measureDiagram(project.shape, now.width, now.height, d);
     const fits = wrapFits(w);
     main.querySelector('.fit')!.textContent = fits === 'sideways' ? 'Turned sideways so it fits on the paper.'
@@ -100,7 +101,16 @@ export function boxRoom (main: HTMLElement): void {
   main.querySelector<HTMLInputElement>('.me')!.addEventListener('change', (e) => { state.set({ me: (e.target as HTMLInputElement).checked }); refresh(); });
   wireChoice(main, 'who', (id) => { state.set({ pose: toggleWho(state.get().pose || look().pose, id) }); refresh(); });
   const words = main.querySelector<HTMLInputElement>('.words')!;
-  words.addEventListener('input', () => { state.set({ words: words.value }); redraw(); });
+  words.addEventListener('input', () => {
+    state.set({ words: words.value });
+    // The rows for each person start from these words, so they follow.
+    main.querySelectorAll<HTMLInputElement>('[data-wrap-name]').forEach((i) => { i.placeholder = words.value || 'Words on it'; });
+    redraw();
+  });
+  main.querySelectorAll<HTMLInputElement>('[data-wrap-name]').forEach((input) => input.addEventListener('input', () => {
+    state.set({ names: { ...state.get().names, [input.dataset.wrapName!]: input.value } });
+    redraw();
+  }));
   wirePatterns(main, design);
   wireColours(main, design);
   wirePrint(main);
@@ -116,7 +126,7 @@ register('box', {
   draw: (k, l) => {
     const s = k.settings as unknown as WrapSettings;
     const project = PROJECTS.find((p) => p.id === s.project) ?? PROJECTS[0];
-    return wrapSheet({ width: s.width, height: s.height, tab: s.tab, title: project.title }, l.pattern, s.words, s.me, l, s.pose || l.pose);
+    return wrapSheet({ width: s.width, height: s.height, tab: s.tab, title: project.title }, l.pattern, s.words, s.me, l, s.pose || l.pose, s.names);
   },
   open: (k) => {
     state.set({ ...(k.settings as unknown as WrapSettings), design: k.design });
@@ -128,3 +138,21 @@ register('box', {
     return s.words ? `${title}: ${s.words}` : title;
   }
 });
+
+/**
+ * With two or more people ticked, a row each for the words on their wrap:
+ * Jazz's pot can say Pens and Sukhi's Crayons. Empty means the words above.
+ */
+function wordsEach (s: WrapSettings): string {
+  const who = s.pose || look().pose;
+  const ids = who === 'mix' ? poses().map((p) => p.id) : Array.isArray(who) ? who : [who];
+  const seen: Array<{ key: string; id: string; name: string }> = [];
+  for (const id of ids) {
+    const key = personOf(pose(id));
+    if (!seen.some((x) => x.key === key)) seen.push({ key, id, name: nameFor(id, look()) });
+  }
+  if (seen.length < 2) return '';
+  return heading('Words on each person\'s wrap') + `<div class="name-rows">${seen.map((p) =>
+    `<label class="name-row"><span class="name-faces">${faceImg(p.id, 'name-face')}</span>` +
+    `<input data-wrap-name="${p.key}" maxlength="24" value="${esc(s.names?.[p.key] ?? '')}" placeholder="${esc(s.words || 'Words on it')}" aria-label="Words on ${esc(p.name || 'your')} wrap"></label>`).join('')}</div>`;
+}

@@ -99,7 +99,10 @@ export function key (x: number, y: number, cell: number, ink: string, accent: st
 export interface SecretTop {
   /** Her brand's logo, a character's face, or just the words. */
   show: 'logo' | 'me' | 'none';
+  /** For a face: which picture. */
   pose: PoseId;
+  /** For a logo: whose brand (a person, see personOf). */
+  who?: string;
   title: string;
   line: string;
 }
@@ -110,7 +113,7 @@ export function secretSheet (message: string, look: Look, top: SecretTop): strin
   const glyphs = layout(message || 'Hello', 176, s).filter((g) => g.y < 150);
   const title = top.title.trim() || 'Top secret';
   const tx = top.show === 'none' ? 17 : 46;
-  const pic = top.show === 'logo' ? logo({ ...look, brand: brandFor(brandKeyFor(top.pose), look) }, 14, 22, 26)
+  const pic = top.show === 'logo' ? logo({ ...look, brand: brandFor(top.who ?? brandKeyFor(top.pose), look) }, 14, 22, 26)
     : top.show === 'me' ? `<circle cx="27" cy="35" r="13" fill="${look.accent2}"/>` + face(top.pose, 27, 34.5, 12.7, 'sq')
     : '';
   const body = `<rect x="10" y="10" width="190" height="8" rx="3" fill="${look.accent}"/>` + pic +
