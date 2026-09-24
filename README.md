@@ -12,6 +12,7 @@ Dark by default and nothing girly, because that is what she asked for.
 | Room | What it does |
 | --- | --- |
 | Stationery | Me stickers, pattern stickers, name labels, bookmarks, a diary cover and diary pages, a week planner, to-do lists, gift tags, door signs and letter paper, all on A4 |
+| Make from a box | Pick a project, measure it with a drawing showing exactly what to measure, and print a wrap that fits, with her pattern, words and face on it and the steps to make it |
 | My brand | Her logo in four styles (badge, stamp, ribbon, initial), business cards and logo stickers. The logo goes on her diary cover and letter paper too |
 | Play | A name poster, secret codes in pigpen with a key for a friend, story sparks that go straight onto a diary page, and a doodle pad |
 | My makes | Photos of finished things and kept doodles, on this device |
@@ -48,12 +49,6 @@ to be reused, modified or redistributed.
 Sheets are drawn in millimetres on an A4 page. Print at **actual size**
 (100%, not "fit to page"): most sheets have a line that should measure
 exactly 5 cm, so a ruler can check. Nothing is closer than 10 mm to the edge.
-
-## Parked
-
-Make from a box (printable wraps for toilet rolls, cereal boxes and lids) is
-parked: Jazz found it unclear. It is in the first commit, `f82bfc2`, to bring
-back from if she wants it.
 
 ## Rules it keeps
 

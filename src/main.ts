@@ -1,8 +1,9 @@
 /**
  * Jazz's Studio.
  *
- * Five rooms: stationery to design and print, her brand, playthings to try,
- * a shelf of what she made, and the room where she decides how it all looks.
+ * Six rooms: stationery to design and print, wraps for things made from
+ * boxes, her brand, playthings to try, a shelf of what she made, and the room
+ * where she decides how it all looks.
  * A hash router moves between them, so the back button and a bookmark both
  * work, and so it runs from a file or a private scheme as happily as from a
  * server.
@@ -14,6 +15,7 @@ import { img, type PoseId } from './character';
 import { ICONS } from './icons';
 import { esc, onRefresh } from './ui';
 import { stationeryRoom } from './rooms/stationery';
+import { boxRoom } from './rooms/box';
 import { brandRoom } from './rooms/brand';
 import { playRoom, PLAYTHINGS } from './rooms/play';
 import { makesRoom } from './rooms/makes';
@@ -21,10 +23,11 @@ import { yoursRoom } from './rooms/yours';
 
 const app = document.getElementById('app')!;
 
-type Room = 'home' | 'stationery' | 'brand' | 'play' | 'makes' | 'yours';
+type Room = 'home' | 'stationery' | 'box' | 'brand' | 'play' | 'makes' | 'yours';
 
 const ROOMS: Record<Exclude<Room, 'home'>, { title: string; icon: string; blurb: string; pose: PoseId; pattern: PatternName }> = {
   stationery: { title: 'Stationery', icon: ICONS.sticker, blurb: 'Stickers, labels, your diary, planners and more', pose: 'draw', pattern: 'zigzag' },
+  box: { title: 'Make from a box', icon: ICONS.box, blurb: 'Wraps that fit your rolls, boxes and cartons', pose: 'hello', pattern: 'stripes' },
   brand: { title: 'My brand', icon: ICONS.star, blurb: 'Your own logo, and business cards', pose: 'cool', pattern: 'triangles' },
   play: { title: 'Play', icon: ICONS.play, blurb: 'Name posters, secret codes, story sparks, doodles', pose: 'idea', pattern: 'bolts' },
   makes: { title: 'My makes', icon: ICONS.camera, blurb: 'Photos of everything you have made', pose: 'wink', pattern: 'confetti' },
@@ -47,6 +50,7 @@ function render (keepScroll = false): void {
   const main = app.querySelector('main')!;
   if (room === 'home') home(main);
   else if (room === 'stationery') stationeryRoom(main);
+  else if (room === 'box') boxRoom(main);
   else if (room === 'brand') brandRoom(main);
   else if (room === 'play') playRoom(main, sub);
   else if (room === 'makes') void makesRoom(main);
@@ -66,7 +70,7 @@ function home (main: HTMLElement): void {
   const l = look();
   const tiles = (Object.keys(ROOMS) as Array<Exclude<Room, 'home'>>).map((r, i) => {
     const t = ROOMS[r];
-    return `<a class="tile" href="#/${r}" style="--tilt:${[-1.2, 1, -0.6, 0.9, -1][i]}deg;--i:${i}">` +
+    return `<a class="tile" href="#/${r}" style="--tilt:${[-1.2, 1, -0.6, 0.9, -1, 0.7][i]}deg;--i:${i}">` +
       `<svg class="tile-art" viewBox="0 0 100 40" preserveAspectRatio="xMidYMid slice" aria-hidden="true">` +
       `<defs>${defs(`t-${r}`, t.pattern, l, 0.9)}</defs><rect width="100" height="40" fill="url(#t-${r})"/></svg>` +
       `<span class="tile-peek">${img(t.pose, 'peek-img')}</span>` +

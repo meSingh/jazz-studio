@@ -56,14 +56,14 @@ export const BRAND_KINDS: KindInfo[] = [
   { id: 'logos', label: 'Logo stickers', blurb: 'Twelve of your logo, for everything you make', words: '', start: () => '', me: false, pose: false }
 ];
 
-const W = 210;
+export const W = 210;
 const H = 297;
-const CUT = 'fill="none" stroke-dasharray="2 1.6" stroke-width=".35"';
+export const CUT = 'fill="none" stroke-dasharray="2 1.6" stroke-width=".35"';
 
-const esc = (s: string): string =>
+export const esc = (s: string): string =>
   s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string);
 
-function page (defsXml: string, body: string, label: string): string {
+export function page (defsXml: string, body: string, label: string): string {
   return `<svg class="sheet-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" ` +
     `role="img" aria-label="${esc(label)}" style="font-family:var(--lettering)">` +
     `<defs>${defsXml}</defs><rect width="${W}" height="${H}" fill="#fff"/>${body}</svg>`;
@@ -73,7 +73,7 @@ function page (defsXml: string, body: string, label: string): string {
  * The writing colour on white paper. Sheets are printed on white, so a light
  * writing colour picked for a dark screen swaps for the dark page colour.
  */
-const inkOf = (look: Look): string => (light(look.ink) > 0.6 ? look.paper : look.ink);
+export const inkOf = (look: Look): string => (light(look.ink) > 0.6 ? look.paper : look.ink);
 const on = (c: string): string => (light(c) > 0.6 ? '#111111' : '#FFFFFF');
 const swap = (look: Look): Look => ({ ...look, accent: look.accent2, accent2: look.accent });
 
@@ -89,7 +89,7 @@ const poseAt = (o: Options, i: number): PoseId =>
   o.pose === 'mix' ? POSES[i % POSES.length].id : o.pose;
 
 /** A line that should measure exactly 5 cm, so a ruler can tell whether the printer shrank the page. */
-function check (ink: string): string {
+export function check (ink: string): string {
   return `<g opacity=".5"><path d="M15 290 H65 M15 288 V292 M65 288 V292" stroke="${ink}" stroke-width=".35"/>` +
     `<text x="68" y="291.3" font-size="2.8" fill="${ink}" font-family="system-ui, sans-serif">This line should measure 5 cm. If it does not, print at actual size.</text></g>`;
 }
@@ -114,7 +114,7 @@ function moods (x: number, y: number, ink: string, accent: string): string {
 }
 
 /** Her face in a small disc, for headers. */
-const disc = (look: Look, cx: number, cy: number, r: number, id: string): string =>
+export const disc = (look: Look, cx: number, cy: number, r: number, id: string): string =>
   `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${look.accent2}"/>` + face(look.pose, cx, cy - r * 0.04, r * 0.98, id);
 
 export function sheet (kind: Kind, o: Options, look: Look): string {
