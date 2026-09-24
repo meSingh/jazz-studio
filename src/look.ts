@@ -43,7 +43,10 @@ export interface Look {
    */
   pose: PoseId;
   backdrop: Backdrop;
+  /** From before brands were each person's: now the fallback for whoever was theirs (see brandFor). */
   brand: Brand;
+  /** Each person's brand, by person (personOf in character.ts), where it has been changed. */
+  brands?: Record<string, Brand>;
   /**
    * Which ready-made characters are in the list, besides any a family added:
    * Jazz's and Sukhi's. Absent in a look from before Sukhi, when it is worked

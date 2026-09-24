@@ -11,6 +11,8 @@
  * sheet; a sheet with none of its own follows the studio's look.
  */
 import { sheet, firstOf, type Kind, type KindInfo, type Options, type Who } from '../sheets';
+import { poses, pose as poseOf, personOf, nameFor, faceImg, brandFor, brandKeyFor } from '../character';
+import { look } from '../look';
 import type { PoseId } from '../character';
 import {
   esc, field, heading, printButton, wirePrint, wireChoice, colourBar, wireColours,
@@ -26,6 +28,10 @@ export interface BenchState {
   words: Partial<Record<Kind, string>>;
   /** Each sheet's own colours, lettering and pattern, where it has any. */
   designs?: Partial<Record<Kind, Design>>;
+  /** Each sheet's words for each person on it, by person, where she changed them. */
+  names?: Partial<Record<Kind, Record<string, string>>>;
+  /** Each sheet's other words (KindInfo.fields), where she changed them. */
+  extra?: Partial<Record<Kind, Record<string, string>>>;
 }
 
 export type Bench = ReturnType<typeof remembered<BenchState>>;
@@ -39,7 +45,7 @@ export function designFor (state: Bench, kind: Kind): DesignTarget {
 }
 
 /** What a bench keeps in My makes for one sheet (see prints.ts). */
-export interface SheetSettings { kind: Kind; me: boolean; pose: Who; words: string }
+export interface SheetSettings { kind: Kind; me: boolean; pose: Who; words: string; names?: Record<string, string>; extra?: Record<string, string> }
 
 /** Puts a bench back to a kept sheet: that sheet chosen, with its words and design. */
 export function reopen (state: Bench, s: SheetSettings, design: Design): void {
@@ -47,7 +53,9 @@ export function reopen (state: Bench, s: SheetSettings, design: Design): void {
   state.set({
     kind: s.kind, me: s.me, pose: s.pose,
     words: { ...now.words, [s.kind]: s.words },
-    designs: { ...now.designs, [s.kind]: design }
+    designs: { ...now.designs, [s.kind]: design },
+    names: { ...now.names, [s.kind]: s.names ?? {} },
+    extra: { ...now.extra, [s.kind]: s.extra ?? {} }
   });
 }
 
@@ -56,21 +64,23 @@ export function reopen (state: Bench, s: SheetSettings, design: Design): void {
  * already says what kind of thing they are ("Cover" rather than "Diary cover").
  * `tool` is the name its prints are kept under in My makes.
  */
-export function bench (main: HTMLElement, kinds: KindInfo[], state: Bench, tool: string, top = '', names: Partial<Record<Kind, string>> = {}): void {
+export function bench (main: HTMLElement, kinds: KindInfo[], state: Bench, tool: string, top = '', names: Partial<Record<Kind, string>> = {}, brandKey?: string): void {
   const s = state.get();
   const kind = kinds.find((k) => k.id === s.kind) ?? kinds[0];
   const design = designFor(state, kind.id);
   const l = design.get();
-  const opts = (): Options => {
-    const now = state.get();
-    return { pattern: design.get().pattern, words: now.words[kind.id] ?? '', me: now.me, pose: now.pose };
-  };
+  const optsFor = (k: Kind, now: BenchState, pattern: Options['pattern']): Options => ({
+    pattern, words: now.words[k] ?? '', me: now.me, pose: now.pose,
+    names: now.names?.[k], extra: now.extra?.[k], brandKey
+  });
+  const opts = (): Options => optsFor(kind.id, state.get(), design.get().pattern);
+  const withPeople = kind.pose || (kind.me && s.me);
 
   // When there is a choice of sheet, it comes first, as a picture of each:
   // easier to tell apart than two names.
   const optionFor = (k: KindInfo, i: number): string => {
     const own = designFor(state, k.id).get();
-    const o = { pattern: own.pattern, words: s.words[k.id] ?? '', me: s.me, pose: s.pose };
+    const o = optsFor(k.id, s, own.pattern);
     return `<button type="button" class="sheet-option" role="radio" data-kind="${k.id}" aria-checked="${k.id === kind.id}">` +
       `<span class="sheet-mini">${scoped(sheet(k.id, o, own), `o${i}-`)}</span>` +
       `<span class="sheet-name">${esc(names[k.id] ?? k.label)}</span><span class="sheet-blurb">${k.blurb}</span></button>`;
@@ -86,9 +96,17 @@ export function bench (main: HTMLElement, kinds: KindInfo[], state: Bench, tool:
           ? heading('Who is on it') + whoPicker(s.pose)
           : heading('Which you') + posePicker(firstOf(s.pose, l), false)
         : ''}
+      ${kind.named && withPeople ? namesList(kind, s) : ''}
       ${heading('Pattern')}
       ${patternPicker(design)}
-      ${kind.words ? heading('Words') + field(kind.words, `<input class="words" maxlength="40" placeholder="${esc(kind.start(l))}" value="${esc(s.words[kind.id] ?? '')}">`) : ''}
+      ${kind.words && !(kind.alone && withPeople) ? heading('Words') + field(kind.words, `<input class="words" maxlength="40" placeholder="${esc(kind.start(l))}" value="${esc(s.words[kind.id] ?? '')}">`) : ''}
+      ${kind.fields ? kind.fields.map((f) => {
+        const v = s.extra?.[kind.id]?.[f.key] ?? f.start(l, brandKey ? nameFor(brandFor(brandKey).pose ?? l.pose, l) : undefined);
+        return f.tick
+          ? `<label class="tick"><input type="checkbox" data-extra="${f.key}" ${v === '1' ? 'checked' : ''}><span>${esc(f.label)}</span></label>`
+          : field(f.label, `<input data-extra="${f.key}" maxlength="40" value="${esc(v)}">`);
+      }).join('') : ''}
+      ${kind.id === 'cover' || kind.id === 'diary' ? brandNote(firstOf(s.pose, l)) : ''}
     </section>
     <section class="preview">
       ${colourBar(design)}
@@ -107,15 +125,67 @@ export function bench (main: HTMLElement, kinds: KindInfo[], state: Bench, tool:
     state.set({ me: (e.target as HTMLInputElement).checked });
     refresh();
   });
+  const redraw = (): void => { main.querySelector('.print-area')!.innerHTML = sheet(kind.id, opts(), design.get()); };
   const words = main.querySelector<HTMLInputElement>('.words');
   words?.addEventListener('input', () => {
     state.set({ words: { ...state.get().words, [kind.id]: words.value } });
-    main.querySelector('.print-area')!.innerHTML = sheet(kind.id, opts(), design.get());
+    redraw();
   });
+  // Each person's words, and the sheet's other words: redrawn as she types.
+  main.querySelectorAll<HTMLInputElement>('[data-name-of]').forEach((input) => input.addEventListener('input', () => {
+    const now = state.get();
+    state.set({ names: { ...now.names, [kind.id]: { ...now.names?.[kind.id], [input.dataset.nameOf!]: input.value } } });
+    redraw();
+  }));
+  main.querySelectorAll<HTMLInputElement>('[data-extra]').forEach((input) => input.addEventListener(input.type === 'checkbox' ? 'change' : 'input', () => {
+    const now = state.get();
+    const value = input.type === 'checkbox' ? (input.checked ? '1' : '0') : input.value;
+    state.set({ extra: { ...now.extra, [kind.id]: { ...now.extra?.[kind.id], [input.dataset.extra!]: value } } });
+    // A tick can bring words in or take them away, so the whole page.
+    if (input.type === 'checkbox') refresh(); else redraw();
+  }));
   wirePrint(main);
   showing(() => {
     const now = state.get();
-    const settings: SheetSettings = { kind: kind.id, me: now.me, pose: now.pose, words: now.words[kind.id] ?? '' };
-    return { tool, settings: { ...settings }, design: designOf(design.get()), ...(tool === 'brand' ? { brand: { ...design.get().brand } } : {}) };
+    const settings: SheetSettings = { kind: kind.id, me: now.me, pose: now.pose, words: now.words[kind.id] ?? '', names: now.names?.[kind.id], extra: now.extra?.[kind.id] };
+    return { tool, settings: { ...settings, ...(brandKey ? { who: brandKey } : {}) }, design: designOf(design.get()), ...(brandKey ? { brand: { ...brandFor(brandKey) } } : {}) };
   });
+}
+
+/**
+ * Everyone ticked on a sheet, a row each, with what goes on theirs: their
+ * name to start with, changed here for this sheet only. By person rather than
+ * by picture, so three pictures of Jazz are still one Jazz to rename. For the
+ * Me stickers, a tick first, since names under them are optional.
+ */
+function namesList (kind: KindInfo, s: BenchState): string {
+  const named = kind.named!;
+  const l = look();
+  const on = kind.named?.optional ? s.extra?.[kind.id]?.names === '1' : true;
+  const ids = s.pose === 'mix' ? poses().map((p) => p.id) : Array.isArray(s.pose) ? s.pose : [s.pose];
+  const people: Array<{ key: string; ids: string[]; name: string }> = [];
+  for (const id of ids) {
+    const key = personOf(poseOf(id));
+    const p = people.find((x) => x.key === key);
+    if (p) p.ids.push(id);
+    else people.push({ key, ids: [id], name: nameFor(id, l) });
+  }
+  const rows = people.map((p) => {
+    const mine = p.key === 'me' || (!!l.name.trim() && p.name === l.name.trim());
+    const value = s.names?.[kind.id]?.[p.key] ?? named.start(p.name, mine);
+    return `<label class="name-row"><span class="name-faces">${p.ids.slice(0, 3).map((id) => faceImg(id, 'name-face')).join('')}</span>` +
+      `<input data-name-of="${p.key}" maxlength="30" value="${esc(value)}" placeholder="${esc(mine && kind.id === 'tags' ? 'Left to write in' : p.name || 'Name')}" aria-label="${esc(named.label)}: ${esc(p.name || 'you')}"></label>`;
+  }).join('');
+  return heading(named.label) +
+    (named.optional ? `<label class="tick"><input type="checkbox" data-extra="names" ${on ? 'checked' : ''}><span>${esc(named.optional)}</span></label>` : '') +
+    (on ? `<div class="name-rows">${rows}</div>` : '');
+}
+
+/** Which brand a diary carries, and where to change it. */
+function brandNote (id: string): string {
+  const key = brandKeyFor(id);
+  const b = brandFor(key);
+  const who = nameFor(id, look()) || 'your';
+  return `<p class="brand-note">${faceImg(id, 'brand-note-face')}<span>This uses ${esc(who === 'your' ? 'your' : `${who}'s`)} brand, <b>${esc(b.name)}</b>. ` +
+    `To change it, <a href="#/brand/${encodeURIComponent(key)}">go to My brand</a>.</span></p>`;
 }

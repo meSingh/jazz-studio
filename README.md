@@ -40,8 +40,8 @@ Dark by default and nothing girly, because that is what she asked for.
 | --- | --- |
 | **Stationery** | Five groups: stickers (of her character, or in her pattern), a diary (cover and pages), labels and gift tags, planners and to-do lists, bookmarks and door signs |
 | **Make from a box** | Measure a toilet roll, a cereal box or a lid, and print a wrap that fits it, with the steps to make a pencil pot, a desk tidy, a notebook cover or a treasure box |
-| **My brand** | Her own logo in four styles, business cards and logo stickers. The logo goes on her diary cover too |
-| **Play** | A poster of her name, secret messages in pigpen with a key for a friend, story sparks for when the diary page is blank, a doodle pad, and invite cards with a code a friend's camera opens the studio from |
+| **My brand** | A logo for each person (her, Sukhi, a friend) in four styles: badge, stamp, ribbon and crest. Logo stickers cut out round the logo's own shape, and business cards that say what she chooses. A diary with someone on it carries their brand |
+| **Play** | A poster of her name, secret messages in pigpen with a key for a friend (with the top she chooses), a story page built from who, what happens and where, a doodle pad, and invite cards with a code a friend's camera opens the studio from |
 | **My makes** | Her prints, kept to print again or change first, and photos of everything she made, all on the device |
 | **Make it yours** | Her character, or a family's own (see below), her name, seven letterings, twelve colour sets and any colour besides, her favourite pattern and the background |
 

@@ -288,7 +288,7 @@ export function posePicker (current: PoseId | 'mix', mix: boolean, attr = 'pose'
  * ticked in any number, grouped by person; or Everyone. A sheet goes through
  * the ticked ones in turn, each with their own name (see sheets.ts).
  */
-export function whoPicker (current: Who): string {
+export function whoPicker (current: Who, hint = 'Tick as many as you like, from anyone. Each one goes on with their own name.'): string {
   const all = current === 'mix';
   const ticked = new Set(all ? [] : Array.isArray(current) ? current : [current]);
   const groups = people(look());
@@ -299,7 +299,7 @@ export function whoPicker (current: Who): string {
         `${faceImg(p.id, 'pose-img')}<span>${esc(p.label || g.name)}</span>${ICONS.tick}</button>`).join('')}</div>
     </div>`).join('')}
     <button type="button" class="chip who-all" data-who="mix" aria-pressed="${all}">Everyone, in turn</button>
-    <p class="hint">Tick as many as you like, from anyone. Each one goes on with their own name.</p>
+    <p class="hint">${hint}</p>
   </div>`;
 }
 

@@ -34,12 +34,9 @@ window.addEventListener('paste', (e) => {
   void own(files, pasteInto);
 });
 
-/** Done: what they chose, and Home. The logo takes their name while it is still the default one. */
+/** Done: what they chose, and Home. Brands are each person's, named after them (see brandFor). */
 function finish (change: Parameters<typeof setLook>[0]): void {
-  const l = look();
-  const name = (change.name ?? l.name).trim();
-  const brand = name && l.brand.name === 'My Studio' ? { ...l.brand, name: `${name} Studio` } : l.brand;
-  setLook({ ...change, brand, welcomed: true });
+  setLook({ ...change, welcomed: true });
   useSets(look());
   location.hash = '#/';
   // Already on Home: the hash did not change, so draw it.

@@ -69,7 +69,7 @@ function render (keepScroll = false): void {
   if (room === 'home') needsWelcome() ? welcomeRoom(main) : home(main);
   else if (room === 'stationery') stationeryRoom(main, sub);
   else if (room === 'box') boxRoom(main);
-  else if (room === 'brand') brandRoom(main);
+  else if (room === 'brand') brandRoom(main, sub);
   else if (room === 'play') playRoom(main, sub);
   else if (room === 'makes') void makesRoom(main);
   else yoursRoom(main, sub);
@@ -95,7 +95,7 @@ function foot (): string {
   const link = (text: string): string => inSukhiPlay
     ? `<b>${text}</b>`
     : `<a href="https://sukhiplay.com" target="_blank" rel="noopener">${text}</a>`;
-  // Sukhi Play's own icon, not Sukhi Colouring's: the studio belongs to Sukhi
+  // Sukhi Play's own mascot, cut out like her mark, not Sukhi Colouring's: the studio belongs to Sukhi
   // Play. The name is the link, so the address is not written out as well.
   return `<footer class="foot"><img src="${sukhiMark}" alt="" width="28" height="28">` +
     `<span>Part of ${link('Sukhi Play')}</span></footer>`;

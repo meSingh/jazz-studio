@@ -11,8 +11,8 @@
 import { fontOf, type Look } from './look';
 import { defs, type PatternName } from './patterns';
 import { fit } from './brand';
-import { W, CUT, esc, page, inkOf, check, disc } from './sheets';
-import type { PoseId } from './character';
+import { W, CUT, esc, page, inkOf, check, disc, type Who } from './sheets';
+import { poses, type PoseId } from './character';
 
 export interface Wrap {
   /** Width round the thing (or across it), and height, in centimetres. */
@@ -37,7 +37,11 @@ export function wrapFits (wrap: Wrap): 'upright' | 'sideways' | false {
   return false;
 }
 
-export function wrapSheet (wrap: Wrap, pattern: PatternName, words: string, me: boolean, look: Look, pose: PoseId = look.pose): string {
+export function wrapSheet (wrap: Wrap, pattern: PatternName, words: string, me: boolean, look: Look, who: Who = look.pose): string {
+  // Where a sheet has room for several copies, each has the next of the
+  // characters she ticked: a pencil pot for her and one for her brother.
+  const list = who === 'mix' ? poses().map((p) => p.id) : Array.isArray(who) ? who : [who || look.pose];
+  const poseFor = (k: number): PoseId => list[k % list.length] ?? look.pose;
   const ink = inkOf(look);
   const tab = wrap.tab ? 10 : 0;
   const w = Math.max(10, wrap.width * 10);
@@ -68,7 +72,7 @@ export function wrapSheet (wrap: Wrap, pattern: PatternName, words: string, me: 
     }
     if (me) {
       const cx = text ? panel * 0.08 + r + 2 : panel / 2;
-      out += `<circle cx="${cx}" cy="${bh / 2}" r="${r + 1.5}" fill="#fff"/>` + disc(pose, look, cx, bh / 2, r, `w${k}`);
+      out += `<circle cx="${cx}" cy="${bh / 2}" r="${r + 1.5}" fill="#fff"/>` + disc(poseFor(k), look, cx, bh / 2, r, `w${k}`);
     }
     if (tab) {
       out += `<rect x="${panel}" width="${tab}" height="${bh}" fill="url(#glue)"/>` +

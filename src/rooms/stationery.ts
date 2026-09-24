@@ -45,7 +45,7 @@ export function stationeryRoom (main: HTMLElement, sub: string): void {
 register('stationery', {
   draw: (k, l) => {
     const s = k.settings as unknown as SheetSettings;
-    return sheet(s.kind, { pattern: l.pattern, words: s.words, me: s.me, pose: s.pose }, l);
+    return sheet(s.kind, { pattern: l.pattern, words: s.words, me: s.me, pose: s.pose, names: s.names, extra: s.extra }, l);
   },
   open: (k) => {
     const s = k.settings as unknown as SheetSettings;

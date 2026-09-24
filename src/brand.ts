@@ -13,7 +13,7 @@ export const LOGO_STYLES: Array<{ id: LogoStyle; label: string }> = [
   { id: 'badge', label: 'Badge' },
   { id: 'stamp', label: 'Stamp' },
   { id: 'ribbon', label: 'Ribbon' },
-  { id: 'monogram', label: 'Initial' }
+  { id: 'monogram', label: 'Crest' }
 ];
 
 const esc = (s: string): string =>
@@ -35,7 +35,8 @@ export function logo (look: Look, x: number, y: number, size: number): string {
   const u = size / 100;
   // The face itself comes from the surrounding <svg>'s style: var() does not work in an attribute.
   const font = 'font-weight="800"';
-  const initial = esc(((look.name.trim() || look.brand.name.trim())[0] ?? 'S').toUpperCase());
+  // The brand's own initial: Sukhi Studio's crest has an S, whoever is making it.
+  const initial = esc((b.name.trim()[0] ?? 'S').toUpperCase());
   const inner = (cx: number, cy: number, r: number): string => b.me
     ? `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${look.accent2}"/>${face(b.pose ?? look.pose, cx, cy, r * 0.94, `${id}f`)}`
     : `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${look.accent2}"/>` +
@@ -56,11 +57,24 @@ export function logo (look: Look, x: number, y: number, size: number): string {
       break;
     }
     case 'stamp': {
-      body = `<rect x="2" y="18" width="96" height="64" rx="10" fill="${look.paper}" stroke="${look.accent}" stroke-width="3"/>` +
-        `<rect x="6" y="22" width="88" height="56" rx="7" fill="none" stroke="${look.accent}" stroke-width=".8"/>` +
-        inner(27, 50, 18) +
-        `<text x="50" y="49" font-size="${fit(b.name, 46, 11)}" fill="${look.ink}" ${font}>${esc(b.name)}</text>` +
-        `<text x="50" y="60" font-size="${fit(b.tagline, 46, 5)}" fill="${look.accent}" ${font}>${esc(b.tagline)}</text>`;
+      // A postage stamp: perforated edges (the holes are the page showing
+      // through), a picture in a frame, and the name along the bottom.
+      let holes = '';
+      for (let i = 0; i <= 9; i++) {
+        const t = 14 + i * 8;
+        holes += `<circle cx="${t}" cy="4" r="2.2" fill="#fff"/><circle cx="${t}" cy="96" r="2.2" fill="#fff"/>`;
+      }
+      for (let i = 0; i <= 11; i++) {
+        const t = 6 + i * 8;
+        holes += `<circle cx="14" cy="${t}" r="2.2" fill="#fff"/><circle cx="86" cy="${t}" r="2.2" fill="#fff"/>`;
+      }
+      body = `<rect x="14" y="4" width="72" height="92" fill="${look.paper}"/>` + holes +
+        `<rect x="20" y="10" width="60" height="58" rx="2" fill="${look.accent}"/>` +
+        `<rect x="22.5" y="12.5" width="55" height="53" rx="1.5" fill="none" stroke="${on(look.accent)}" stroke-width=".6" opacity=".6"/>` +
+        inner(50, 39, 20) +
+        `<text x="76" y="20" text-anchor="end" font-size="6" fill="${on(look.accent)}" ${font}>1st</text>` +
+        `<text x="50" y="80" text-anchor="middle" font-size="${fit(b.name, 60, 9)}" fill="${look.ink}" ${font}>${esc(b.name)}</text>` +
+        `<text x="50" y="88.5" text-anchor="middle" font-size="${fit(b.tagline, 60, 4.4)}" fill="${look.accent}" ${font} letter-spacing=".3">${esc(b.tagline)}</text>`;
       break;
     }
     case 'ribbon': {
@@ -72,17 +86,50 @@ export function logo (look: Look, x: number, y: number, size: number): string {
       break;
     }
     default: {
-      const hex = [0, 1, 2, 3, 4, 5].map((i) => {
-        const a = Math.PI / 3 * i - Math.PI / 2;
-        return `${(50 + 34 * Math.cos(a)).toFixed(2)} ${(40 + 34 * Math.sin(a)).toFixed(2)}`;
-      }).join(' L');
-      body = `<path d="M${hex}Z" fill="${look.accent}"/>` +
-        `<text x="50" y="54" text-anchor="middle" font-size="40" fill="${on(look.accent)}" ${font}>${initial}</text>` +
-        `<text x="50" y="88" text-anchor="middle" font-size="${fit(b.name, 96, 11)}" fill="${look.accent}" ${font}>${esc(b.name)}</text>` +
-        `<text x="50" y="97" text-anchor="middle" font-size="${fit(b.tagline, 96, 5)}" fill="${look.accent2}" ${font}>${esc(b.tagline)}</text>`;
+      // A crest: a shield with the initial large, a line across the top, and
+      // the name on a banner that runs out past its sides.
+      const shield = 'M50 4 L90 16 V48 C90 74 70 90 50 97 C30 90 10 74 10 48 V16Z';
+      body = `<path d="${shield}" fill="${look.accent}"/>` +
+        `<path d="${shield}" transform="translate(50 50) scale(.88) translate(-50 -50)" fill="none" stroke="${on(look.accent)}" stroke-width="1" opacity=".55"/>` +
+        `<text x="50" y="27" text-anchor="middle" font-size="${fit(b.tagline.toUpperCase(), 52, 4.4)}" fill="${on(look.accent)}" ${font} letter-spacing=".6" opacity=".85">${esc(b.tagline.toUpperCase())}</text>` +
+        `<text x="50" y="57" text-anchor="middle" font-size="32" fill="${on(look.accent)}" ${font}>${initial}</text>` +
+        `<path d="M2 63 L10 63 L10 77 L2 77 L6 70Z M98 63 L90 63 L90 77 L98 77 L94 70Z" fill="${look.accent2}" opacity=".75"/>` +
+        `<rect x="8" y="61" width="84" height="16" rx="2" fill="${look.accent2}"/>` +
+        `<text x="50" y="72.4" text-anchor="middle" font-size="${fit(b.name, 76, 9)}" fill="${on(look.accent2)}" ${font}>${esc(b.name)}</text>`;
     }
   }
   return `<g transform="translate(${x} ${y}) scale(${u})">${body}</g>`;
+}
+
+/**
+ * Each style's own outline, in the logo's 0 to 100 box, a little outside the
+ * drawing: where to cut, so a logo sticker is the badge itself rather than a
+ * square with a badge on it.
+ */
+export function logoOutline (style: LogoStyle): string {
+  switch (style) {
+    case 'badge': return 'M50 -1.5 A51.5 51.5 0 1 1 49.99 -1.5Z';
+    case 'stamp': return 'M11 1 H89 V99 H11Z';
+    case 'ribbon': return 'M8 51 H36.4 A25 25 0 1 1 63.6 51 H92 A8 8 0 0 1 100 59 V89 A8 8 0 0 1 92 97 H8 A8 8 0 0 1 0 89 V59 A8 8 0 0 1 8 51Z';
+    default: return 'M50 1 L93 13.5 V60 H100 V79 H90.5 C85 89 70 96 50 100 C30 96 15 89 9.5 79 H0 V60 H7 V13.5Z';
+  }
+}
+
+/**
+ * Just the logo's middle, her character or her initial in a ring, for a
+ * business card, where the words around a whole logo would only say again
+ * what the card says.
+ */
+export function logoMark (look: Look, cx: number, cy: number, r: number): string {
+  const b = look.brand;
+  const id = `lm${++n}`;
+  const initial = esc((b.name.trim()[0] ?? 'S').toUpperCase());
+  return `<circle cx="${cx}" cy="${cy}" r="${r + r * 0.12}" fill="#fff"/>` +
+    `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${look.accent2}"/>` +
+    (b.me
+      ? face(b.pose ?? look.pose, cx, cy, r * 0.96, `${id}f`)
+      : `<text x="${cx}" y="${cy + r * 0.36}" text-anchor="middle" font-size="${r * 1.05}" font-weight="800" fill="${on(look.accent2)}">${initial}</text>`) +
+    `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${look.accent}" stroke-width="${r * 0.08}"/>`;
 }
 
 /** A logo on its own, for the screen. */

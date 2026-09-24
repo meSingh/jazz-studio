@@ -10,12 +10,13 @@ import { PROJECTS } from '../projects';
 import { wrapSheet, wrapFits, measureDiagram, fmt } from '../wrap';
 import {
   esc, field, printButton, wirePrint, wireChoice, colourBar, wireColours,
-  patternPicker, wirePatterns, posePicker, refresh, remembered, sheetDesign, type Design
+  patternPicker, wirePatterns, whoPicker, toggleWho, refresh, remembered, sheetDesign, type Design
 } from '../ui';
-import type { PoseId } from '../character';
 import { register, showing, designOf } from '../prints';
+import type { Who } from '../sheets';
+import { look } from '../look';
 
-interface WrapSettings { project: string; width: number; height: number; tab: boolean; words: string; me: boolean; pose: PoseId | '' }
+interface WrapSettings { project: string; width: number; height: number; tab: boolean; words: string; me: boolean; pose: Who | '' }
 
 const state = remembered<WrapSettings & { design?: Design }>(
   'jazz-studio-box', { project: 'pencil-pot', width: 15.5, height: 10, tab: true, words: '', me: true, pose: '' });
@@ -61,7 +62,7 @@ export function boxRoom (main: HTMLElement): void {
       ${patternPicker(design)}
       ${field('Words on it (or leave empty)', `<input class="words" maxlength="24" placeholder="Pens" value="${esc(s.words)}">`)}
       <label class="tick"><input type="checkbox" class="me" ${s.me ? 'checked' : ''}><span>Put me on it</span></label>
-      ${s.me ? posePicker(s.pose || l.pose, false) : ''}
+      ${s.me ? whoPicker(s.pose || l.pose, 'Where two or more fit on a sheet, tick someone for each: every wrap gets the next one.') : ''}
 
       <h2 class="box-title"><b>4</b>Print it and make it</h2>
       <p class="hint">Print at actual size, so it fits. Then:</p>
@@ -97,7 +98,7 @@ export function boxRoom (main: HTMLElement): void {
   num('.h', 'height');
   main.querySelector<HTMLInputElement>('.tab')!.addEventListener('change', (e) => { state.set({ tab: (e.target as HTMLInputElement).checked }); redraw(); });
   main.querySelector<HTMLInputElement>('.me')!.addEventListener('change', (e) => { state.set({ me: (e.target as HTMLInputElement).checked }); refresh(); });
-  wireChoice(main, 'pose', (p) => { state.set({ pose: p }); refresh(); });
+  wireChoice(main, 'who', (id) => { state.set({ pose: toggleWho(state.get().pose || look().pose, id) }); refresh(); });
   const words = main.querySelector<HTMLInputElement>('.words')!;
   words.addEventListener('input', () => { state.set({ words: words.value }); redraw(); });
   wirePatterns(main, design);

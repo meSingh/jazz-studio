@@ -3,11 +3,11 @@
  * pigpen, sparks for when the diary page is blank, and a doodle pad.
  */
 import { look } from '../look';
-import { img, either, type PoseId } from '../character';
+import { img, either, people, type PoseId } from '../character';
 import { posterSheet } from '../play/poster';
 import { inviteSheet } from '../play/invite';
-import { secretSheet, layout, draw } from '../play/pigpen';
-import { spark } from '../play/sparks';
+import { secretSheet, layout, draw, type SecretTop } from '../play/pigpen';
+import { WHO, WHAT, WHERE, QUESTIONS, pick, storySheet } from '../play/sparks';
 import { save } from '../makes';
 import { ICONS } from '../icons';
 import {
@@ -20,7 +20,7 @@ import { register, showing, designOf } from '../prints';
 export const PLAYTHINGS: Array<{ id: string; title: string; blurb: string; pose: PoseId }> = [
   { id: 'poster', title: 'Name poster', blurb: 'Your name, huge, in your pattern', pose: 'cool' },
   { id: 'secret', title: 'Secret codes', blurb: 'Write in a code only friends can read', pose: 'wink' },
-  { id: 'sparks', title: 'Story sparks', blurb: 'Something to write about, at the tap of a button', pose: 'idea' },
+  { id: 'sparks', title: 'Story sparks', blurb: 'Build a story idea, then write and draw it on a page', pose: 'idea' },
   { id: 'doodle', title: 'Doodle pad', blurb: 'Draw in your colours and keep it', pose: 'draw' },
   { id: 'invite', title: 'Invite a friend', blurb: 'Cards with a code to scan, so friends can make things too', pose: 'hello' }
 ];
@@ -147,8 +147,10 @@ register('invite', {
 
 /* Secret codes ----------------------------------------------------------- */
 
-const secretState = remembered<{ message: string; design?: Design }>('jazz-studio-secret', { message: 'Meet me at the treehouse' });
+const secretState = remembered<{ message: string; top?: SecretTop; design?: Design }>('jazz-studio-secret', { message: 'Meet me at the treehouse' });
 const secretDesign = sheetDesign(() => secretState.get().design, (d) => secretState.set({ design: d }));
+/** The top of the message: what she chose, or her logo and "Top secret" to start with. */
+const topOf = (): SecretTop => ({ show: 'logo', pose: look().pose, title: 'Top secret', line: 'Only someone with the key can read this', ...secretState.get().top });
 
 function secretPreview (message: string): string {
   const l = secretDesign.get();
@@ -161,6 +163,7 @@ function secretPreview (message: string): string {
 
 function secret (main: HTMLElement): void {
   const s = secretState.get();
+  const top = topOf();
   main.innerHTML = `<div class="workbench">
     <section class="controls">
       ${heading('Your message')}
@@ -168,24 +171,38 @@ function secret (main: HTMLElement): void {
       ${heading('In secret code')}
       <div class="secret-out">${secretPreview(s.message)}</div>
       <p class="hint">This is pigpen, a real secret code. Each letter is the shape of its box in the key. Print it with the key, cut the key off, and give it to a friend.</p>
+      ${heading('At the top')}
+      <div class="chips" role="radiogroup" aria-label="At the top">
+        ${([['logo', 'A logo'], ['me', 'A face'], ['none', 'Just the words']] as const).map(([id, label]) =>
+          `<button type="button" class="chip" role="radio" data-top="${id}" aria-checked="${top.show === id}">${label}</button>`).join('')}
+      </div>
+      ${top.show !== 'none' ? posePicker(top.pose, false, 'top-pose') + (top.show === 'logo' ? '<p class="hint">The logo is the brand of whoever you pick, from My brand.</p>' : '') : ''}
+      ${field('Title', `<input class="s-title" maxlength="30" value="${esc(top.title)}">`)}
+      ${field('Under the title (or leave empty)', `<input class="s-line" maxlength="50" value="${esc(top.line)}">`)}
     </section>
-    <section class="preview">${colourBar(secretDesign)}<div class="print-area">${secretSheet(s.message, secretDesign.get())}</div>${printButton('Print message and key')}</section>
+    <section class="preview">${colourBar(secretDesign)}<div class="print-area">${secretSheet(s.message, secretDesign.get(), top)}</div>${printButton('Print message and key')}</section>
   </div>`;
+  const redraw = (): void => {
+    const msg = secretState.get().message;
+    main.querySelector('.secret-out')!.innerHTML = secretPreview(msg);
+    main.querySelector('.print-area')!.innerHTML = secretSheet(msg, secretDesign.get(), topOf());
+  };
   const msg = main.querySelector<HTMLTextAreaElement>('.s-msg')!;
-  msg.addEventListener('input', () => {
-    secretState.set({ message: msg.value });
-    main.querySelector('.secret-out')!.innerHTML = secretPreview(msg.value);
-    main.querySelector('.print-area')!.innerHTML = secretSheet(msg.value, secretDesign.get());
-  });
+  msg.addEventListener('input', () => { secretState.set({ message: msg.value }); redraw(); });
+  const setTop = (change: Partial<SecretTop>): void => { secretState.set({ top: { ...topOf(), ...change } }); };
+  wireChoice(main, 'top', (t) => { setTop({ show: t as SecretTop['show'] }); refresh(); });
+  wireChoice(main, 'top-pose', (p) => { setTop({ pose: p }); refresh(); });
+  main.querySelector<HTMLInputElement>('.s-title')!.addEventListener('input', (e) => { setTop({ title: (e.target as HTMLInputElement).value }); redraw(); });
+  main.querySelector<HTMLInputElement>('.s-line')!.addEventListener('input', (e) => { setTop({ line: (e.target as HTMLInputElement).value }); redraw(); });
   wireColours(main, secretDesign);
   wirePrint(main);
-  showing(() => ({ tool: 'secret', settings: { message: secretState.get().message }, design: designOf(secretDesign.get()) }));
+  showing(() => ({ tool: 'secret', settings: { message: secretState.get().message, top: topOf() }, design: designOf(secretDesign.get()) }));
 }
 
 register('secret', {
-  draw: (k, l) => secretSheet(String(k.settings.message ?? ''), l),
+  draw: (k, l) => secretSheet(String(k.settings.message ?? ''), l, { ...topOf(), ...(k.settings.top as Partial<SecretTop> | undefined) }),
   open: (k) => {
-    secretState.set({ message: String(k.settings.message ?? ''), design: k.design });
+    secretState.set({ message: String(k.settings.message ?? ''), top: k.settings.top as SecretTop | undefined, design: k.design });
     location.hash = '#/play/secret';
   },
   name: () => 'Secret message'
@@ -193,35 +210,100 @@ register('secret', {
 
 /* Story sparks ----------------------------------------------------------- */
 
-let current = '';
+interface StorySettings { mode: 'story' | 'question'; who: string; what: string; where: string; question: string; title: string }
+
+const storyState = remembered<StorySettings & { design?: Design }>('jazz-studio-story', {
+  mode: 'story', who: pick(WHO), what: pick(WHAT), where: pick(WHERE), question: pick(QUESTIONS), title: ''
+});
+const storyDesign = sheetDesign(() => storyState.get().design, (d) => storyState.set({ design: d }));
+
+/** Her people first, as heroes, then the made-up ones. A person is stored as "@" and their key. */
+function heroes (): Array<{ value: string; label: string; pose?: PoseId }> {
+  return [
+    ...people(look()).map((g) => ({ value: `@${g.key}`, label: g.name, pose: g.poses[0].id })),
+    ...WHO.map((w) => ({ value: w, label: w }))
+  ];
+}
+
+function idea (s: StorySettings): string {
+  if (s.mode === 'question') return s.question;
+  const hero = heroes().find((h) => h.value === s.who);
+  return `${hero?.label ?? s.who} ${s.what} ${s.where}.`;
+}
+
+const heroPose = (s: StorySettings): PoseId | null =>
+  s.mode === 'story' ? heroes().find((h) => h.value === s.who)?.pose ?? null : null;
 
 function sparks (main: HTMLElement): void {
-  if (!current) current = spark();
-  main.innerHTML = `<section class="spark">
-    <div class="spark-me">${img(either('idea', 0), 'spark-img')}</div>
-    <div class="spark-card">
-      <p class="spark-label">Write about this</p>
-      <p class="spark-text" aria-live="polite">${esc(current)}</p>
-      <div class="spark-actions">
-        <button type="button" class="go spin">${ICONS.spin}<span>Another one</span></button>
-        <button type="button" class="go go--second diary">${ICONS.sticker}<span>Put it on a diary page</span></button>
+  const s = storyState.get();
+  const choose = (key: 'who' | 'what' | 'where' | 'question', label: string, options: Array<{ value: string; label: string }>): string =>
+    `<div class="story-part"><label class="field"><span>${label}</span><select data-part="${key}">${options.map((o) =>
+      `<option value="${esc(o.value)}"${o.value === s[key] ? ' selected' : ''}>${esc(o.label)}</option>`).join('')}</select></label>` +
+    `<button type="button" class="mini story-spin" data-spin="${key}" title="Surprise me" aria-label="Surprise me: ${label}">${ICONS.spin}</button></div>`;
+  const plain = (list: string[]): Array<{ value: string; label: string }> => list.map((x) => ({ value: x, label: x }));
+  main.innerHTML = `<div class="workbench">
+    <section class="controls">
+      <div class="chips" role="radiogroup" aria-label="What kind">
+        <button type="button" class="chip" role="radio" data-mode="story" aria-checked="${s.mode === 'story'}">Make up a story</button>
+        <button type="button" class="chip" role="radio" data-mode="question" aria-checked="${s.mode === 'question'}">Answer a question</button>
       </div>
-    </div>
-  </section>`;
-  main.querySelector('.spin')!.addEventListener('click', () => {
-    current = spark();
-    const t = main.querySelector('.spark-text')!;
-    t.classList.remove('pop');
-    void (t as HTMLElement).offsetWidth;
-    t.textContent = current;
-    t.classList.add('pop');
+      ${s.mode === 'story'
+        ? heading('Your story') + choose('who', 'Who', heroes()) + choose('what', 'What happens', plain(WHAT)) + choose('where', 'Where', plain(WHERE)) +
+          `<button type="button" class="go go--second story-all">${ICONS.spin}<span>Spin all three</span></button>` +
+          '<p class="hint">Pick one of your people and they stand in the drawing box, ready for you to draw the rest.</p>'
+        : heading('Your question') + choose('question', 'The question', plain(QUESTIONS))}
+      ${field('Title at the top (or leave empty)', `<input class="story-title" maxlength="30" placeholder="My story" value="${esc(s.title)}">`)}
+      <button type="button" class="go go--ghost story-diary">${ICONS.sticker}<span>Put it on a diary page instead</span></button>
+      ${heading('Pattern')}
+      ${patternPicker(storyDesign)}
+    </section>
+    <section class="preview">${colourBar(storyDesign)}<div class="print-area">${storySheet(idea(s), s.title, heroPose(s), storyDesign.get())}</div>${printButton('Print the page')}</section>
+  </div>`;
+  const redraw = (): void => {
+    const now = storyState.get();
+    main.querySelector('.print-area')!.innerHTML = storySheet(idea(now), now.title, heroPose(now), storyDesign.get());
+  };
+  wireChoice(main, 'mode', (m) => { storyState.set({ mode: m as StorySettings['mode'] }); refresh(); });
+  main.querySelectorAll<HTMLSelectElement>('[data-part]').forEach((sel) => sel.addEventListener('change', () => {
+    storyState.set({ [sel.dataset.part!]: sel.value });
+    redraw();
+  }));
+  const lists = { who: () => heroes().map((h) => h.value), what: () => WHAT, where: () => WHERE, question: () => QUESTIONS };
+  main.querySelectorAll<HTMLButtonElement>('[data-spin]').forEach((b) => b.addEventListener('click', () => {
+    const key = b.dataset.spin as keyof typeof lists;
+    storyState.set({ [key]: pick(lists[key]()) });
+    refresh();
+  }));
+  main.querySelector('.story-all')?.addEventListener('click', () => {
+    storyState.set({ who: pick(lists.who()), what: pick(WHAT), where: pick(WHERE) });
+    refresh();
   });
-  main.querySelector('.diary')!.addEventListener('click', () => {
-    const s = stationeryState.get();
-    stationeryState.set({ kind: 'diary', words: { ...s.words, diary: current } });
+  main.querySelector<HTMLInputElement>('.story-title')!.addEventListener('input', (e) => { storyState.set({ title: (e.target as HTMLInputElement).value }); redraw(); });
+  main.querySelector('.story-diary')!.addEventListener('click', () => {
+    const st = stationeryState.get();
+    stationeryState.set({ kind: 'diary', words: { ...st.words, diary: idea(storyState.get()) } });
     location.hash = '#/stationery/diary';
   });
+  wirePatterns(main, storyDesign);
+  wireColours(main, storyDesign);
+  wirePrint(main);
+  showing(() => {
+    const { mode, who, what, where, question, title } = storyState.get();
+    return { tool: 'story', settings: { mode, who, what, where, question, title }, design: designOf(storyDesign.get()) };
+  });
 }
+
+register('story', {
+  draw: (k, l) => {
+    const s = k.settings as unknown as StorySettings;
+    return storySheet(idea(s), s.title, heroPose(s), l);
+  },
+  open: (k) => {
+    storyState.set({ ...(k.settings as unknown as StorySettings), design: k.design });
+    location.hash = '#/play/sparks';
+  },
+  name: (k) => (k.settings as unknown as StorySettings).title || 'Story page'
+});
 
 /* Doodle pad ------------------------------------------------------------- */
 

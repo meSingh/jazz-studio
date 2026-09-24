@@ -34,7 +34,7 @@ import sThinking from './assets/sukhi/thinking.webp';
 import sProud from './assets/sukhi/proud.webp';
 import sPainting from './assets/sukhi/painting.webp';
 import { run, CHARACTERS } from './makes';
-import { look, type Look } from './look';
+import { look, setLook, type Look, type Brand } from './look';
 
 /** One of Jazz's ('hello', 'draw' and so on), or 'c-' and an id for a family's own. */
 export type PoseId = string;
@@ -287,3 +287,33 @@ export function faceImg (id: PoseId, cls = ''): string {
   return `<span class="${cls} face-crop"><img src="${p.url}" alt="" draggable="false" ` +
     `style="width:${(scale * 100).toFixed(1)}%;left:${(50 - left * scale).toFixed(1)}%;top:calc(50% - ${(top * scale * p.h / p.w).toFixed(1)}%)"></span>`;
 }
+
+/* Brands ------------------------------------------------------------------ */
+
+/**
+ * Each person's brand: their logo's name, line, style and picture. A sheet
+ * with Sukhi on it carries Sukhi's brand, one with Jazz carries Jazz's. Made
+ * in My brand, one person at a time; until then, "Sukhi Studio" with his
+ * picture. A look from before brands were each person's had one brand, which
+ * stays with whoever was theirs.
+ */
+export function brandFor (key: string, l: Look = look()): Brand {
+  const saved = l.brands?.[key];
+  if (saved) return saved;
+  const theirs = personOf(pose(l.pose));
+  if (!l.brands && key === theirs && l.brand.name !== 'My Studio') return l.brand;
+  const first = everyone().find((p) => personOf(p) === key);
+  const name = key === 'me' ? l.name.trim() : first ? nameFor(first.id, l) : '';
+  return { name: name ? `${name} Studio` : 'My Studio', tagline: 'Artist · Maker · Writer', style: 'badge', me: true, pose: first?.id };
+}
+
+/** Changes one person's brand, keeping the old single brand where it belonged. */
+export function setBrand (key: string, change: Partial<Brand>): void {
+  const l = look();
+  const brands = { ...(l.brands ?? { [personOf(pose(l.pose))]: brandFor(personOf(pose(l.pose)), l) }) };
+  brands[key] = { ...brandFor(key, l), ...change };
+  setLook({ brands });
+}
+
+/** Whose brand a sheet with this character on it carries. */
+export const brandKeyFor = (id: PoseId): string => personOf(pose(id));

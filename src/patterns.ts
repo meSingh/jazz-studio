@@ -56,24 +56,33 @@ export function defs (id: string, which: PatternName, look: Look, scale = 1): st
     case 'triangles':
       return tile(10, 10, `<path d="M${s(0.5)} ${s(4.5)} L${s(2.5)} ${s(0.8)} L${s(4.5)} ${s(4.5)}Z" fill="${accent}"/>` +
         `<path d="M${s(5.5)} ${s(5.5)} L${s(7.5)} ${s(9.2)} L${s(9.5)} ${s(5.5)}Z" fill="${accent2}"/>`);
-    case 'grid':
-      return tile(8, 8, `<path d="M0 0 H${s(8)} M0 0 V${s(8)}" stroke="${accent}" stroke-width="${s(0.6)}" opacity=".8"/>` +
-        `<circle cx="${s(4)}" cy="${s(4)}" r="${s(0.7)}" fill="${accent2}"/>`);
+    case 'grid': {
+      // Graph paper: fine lines every 2.5, a bolder one every 10.
+      let fine = '';
+      for (const v of [2.5, 5, 7.5]) fine += `M${s(v)} 0 V${s(10)} M0 ${s(v)} H${s(10)} `;
+      return tile(10, 10, `<path d="${fine}" stroke="${accent}" stroke-width="${s(0.25)}" opacity=".55"/>` +
+        `<path d="M${s(0.3)} 0 V${s(10)} M0 ${s(0.3)} H${s(10)}" stroke="${accent2}" stroke-width="${s(0.6)}"/>`);
+    }
+    // The shapes below are a half-drop: every other one moved half a step
+    // across and down, the same size, so they sit close and even, with no
+    // big gaps and no rows marching across.
     case 'bolts':
-      return tile(12, 12, path(BOLT, accent, 1, 1) + path(BOLT, accent2, 7.2, 6.4, 0.5));
+      // The second bolt is taller than half a tile, so its top is drawn again
+      // a tile up, where the tile above shows it.
+      return tile(8, 8, path(BOLT, accent, -0.6, 0, 0.62) + path(BOLT, accent2, 3.4, 4, 0.62) + path(BOLT, accent2, 3.4, -4, 0.62));
     case 'plus':
       return tile(10, 10, `<path d="M${s(2.5)} ${s(1)} V${s(4)} M${s(1)} ${s(2.5)} H${s(4)}" stroke="${accent}" stroke-width="${s(1)}" stroke-linecap="round"/>` +
         `<path d="M${s(7.5)} ${s(6)} V${s(9)} M${s(6)} ${s(7.5)} H${s(9)}" stroke="${accent2}" stroke-width="${s(1)}" stroke-linecap="round"/>`);
     case 'dots':
-      return tile(10, 10, `<circle cx="${s(2.5)}" cy="${s(2.5)}" r="${s(1.3)}" fill="${accent}"/>` +
-        `<circle cx="${s(7.5)}" cy="${s(7.5)}" r="${s(1.3)}" fill="${accent2}"/>`);
+      return tile(6, 6, `<circle cx="${s(1.5)}" cy="${s(1.5)}" r="${s(1)}" fill="${accent}"/>` +
+        `<circle cx="${s(4.5)}" cy="${s(4.5)}" r="${s(1)}" fill="${accent2}"/>`);
     case 'stripes':
       return tile(10, 10, `<rect width="${s(10)}" height="${s(3.2)}" fill="${accent}" opacity=".85"/>` +
         `<rect y="${s(5)}" width="${s(10)}" height="${s(1.4)}" fill="${accent2}" opacity=".9"/>`);
     case 'stars':
-      return tile(12, 12, path(STAR, accent, 1, 1) + path(STAR, accent2, 7.5, 7.5, 0.45));
+      return tile(8, 8, path(STAR, accent, 0.1, 0.2, 0.4) + path(STAR, accent2, 4.1, 4.2, 0.4));
     case 'hearts':
-      return tile(12, 12, path(HEART, accent, 1, 1) + path(HEART, accent2, 7, 7, 0.5));
+      return tile(8, 8, path(HEART, accent, 0, 0, 0.42) + path(HEART, accent2, 4, 4, 0.42));
     case 'checks':
       return tile(10, 10, `<rect width="${s(5)}" height="${s(10)}" fill="${accent}" opacity=".35"/>` +
         `<rect width="${s(10)}" height="${s(5)}" fill="${accent}" opacity=".35"/>`);

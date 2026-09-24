@@ -11,8 +11,8 @@
  */
 import { light, fontOf, whose, type Look } from './look';
 import { defs, type PatternName } from './patterns';
-import { face, figure, poses, nameFor, type PoseId } from './character';
-import { logo, fit } from './brand';
+import { face, figure, poses, pose as poseOf, nameFor, personOf, brandFor, brandKeyFor, type PoseId } from './character';
+import { logo, logoMark, logoOutline, fit } from './brand';
 
 export type Kind =
   | 'stickers' | 'faces' | 'bookmarks' | 'labels' | 'cover' | 'diary'
@@ -28,9 +28,28 @@ export interface Options {
    * she ticked, which a sheet with several places goes through in turn.
    */
   pose: Who;
+  /** Each person's words on this sheet, by person (personOf), where she changed them. */
+  names?: Record<string, string>;
+  /** The sheet's other words she can change (see KindInfo.fields), by key. */
+  extra?: Record<string, string>;
+  /** Whose brand a My brand sheet carries; other sheets carry their character's. */
+  brandKey?: string;
 }
 
 export type Who = PoseId | 'mix' | PoseId[];
+
+/** Words that are one per person on a sheet: what the list of them is called, and what each starts as. */
+export interface Named {
+  label: string;
+  /** From the person's name; `mine` for the person using the studio. */
+  start: (name: string, mine: boolean) => string;
+  /** When they can be left off altogether: the tick box's words. */
+  optional?: string;
+}
+
+/** Other words on a sheet, each changeable: a text box, or a tick box when `tick`. */
+/** `who` is the name of the person the sheet is for, where that is not the studio's own. */
+export interface Field { key: string; label: string; start: (l: Look, who?: string) => string; tick?: boolean }
 
 export interface KindInfo {
   id: Kind;
@@ -43,19 +62,34 @@ export interface KindInfo {
   pose: boolean;
   /** Has several places for a character, so she can tick several people. */
   many?: boolean;
+  /** One set of words per person on it, rather than the same words on every one. */
+  named?: Named;
+  /** The words box is only for when nobody is on it; with people on, each has their own. */
+  alone?: boolean;
+  fields?: Field[];
 }
 
 export const KINDS: KindInfo[] = [
-  { id: 'faces', label: 'Me stickers', blurb: 'Your character on stickers. Print on sticker paper', words: 'Name under each one (or leave empty)', start: () => '', me: false, pose: true, many: true },
-  { id: 'stickers', label: 'Pattern stickers', blurb: 'Circles, squares and hexagons to cut out', words: 'What should they say?', start: (l) => l.name, me: false, pose: false },
-  { id: 'labels', label: 'Name labels', blurb: 'For books, boxes and pencil cases', words: 'Name on the labels', start: (l) => l.name || 'Each person\'s name', me: true, pose: false, many: true },
-  { id: 'bookmarks', label: 'Bookmarks', blurb: 'Four to a page. Thick paper works best', words: 'Words down the middle', start: (l) => l.name || 'Each person\'s name', me: true, pose: false, many: true },
-  { id: 'cover', label: 'Diary cover', blurb: 'The front of your diary, with you on it', words: 'Title on the cover', start: (l) => `${whose(l.name)} Diary`, me: false, pose: true },
+  { id: 'faces', label: 'Me stickers', blurb: 'Your character on stickers. Print on sticker paper', words: '', start: () => '', me: false, pose: true, many: true,
+    named: { label: 'Names under them', start: (n) => n, optional: 'Put names under them' } },
+  { id: 'stickers', label: 'Pattern stickers', blurb: 'Circles, squares and hexagons to cut out', words: 'What the round ones say', start: (l) => l.name, me: true, pose: false, many: true },
+  { id: 'labels', label: 'Name labels', blurb: 'For books, boxes and pencil cases', words: 'Name on the labels', start: (l) => l.name, me: true, pose: false, many: true,
+    named: { label: 'Name on each person\'s labels', start: (n) => n }, alone: true,
+    fields: [{ key: 'top', label: 'Above the name', start: () => 'This belongs to' }] },
+  { id: 'bookmarks', label: 'Bookmarks', blurb: 'Four to a page. Thick paper works best', words: 'Words down the middle', start: (l) => l.name, me: true, pose: false, many: true,
+    named: { label: 'Down the middle of each', start: (n) => n }, alone: true },
+  { id: 'cover', label: 'Diary cover', blurb: 'The front of your diary, with you on it', words: 'Title on the cover', start: (l) => `${whose(l.name)} Diary`, me: false, pose: true,
+    fields: [
+      { key: 'badge', label: 'Their brand\'s badge on the cover', start: () => '1', tick: true },
+      { key: 'year', label: 'Year', start: () => String(new Date().getFullYear()) }
+    ] },
   { id: 'diary', label: 'Diary page', blurb: 'Date, mood and lines, with your name at the top', words: 'Something to write about (or leave empty)', start: () => '', me: true, pose: false },
   { id: 'planner', label: 'Week planner', blurb: 'Every day of the week, and a goal', words: 'Title', start: (l) => `${whose(l.name)} Week`, me: true, pose: false },
   { id: 'todo', label: 'To-do lists', blurb: 'Two lists to a page, with boxes to tick', words: 'Title', start: () => 'Things to do', me: true, pose: false },
-  { id: 'tags', label: 'Gift tags', blurb: 'Eight tags. Punch a hole and add ribbon. Tick friends to put them on as who it is to', words: 'From', start: (l) => l.name, me: true, pose: false, many: true },
-  { id: 'door', label: 'Door sign', blurb: 'Two hangers for your door handle', words: 'What the sign says', start: () => 'Knock first!', me: true, pose: true, many: true }
+  { id: 'tags', label: 'Gift tags', blurb: 'Eight tags. Punch a hole and add ribbon. Tick friends to put them on as who it is to', words: 'From', start: (l) => l.name, me: true, pose: false, many: true,
+    named: { label: 'Who each tag is to', start: (n, mine) => (mine ? '' : n) } },
+  { id: 'door', label: 'Door sign', blurb: 'Two hangers for your door handle', words: 'What the sign says', start: () => 'Knock first!', me: true, pose: true, many: true,
+    named: { label: 'Top line of each sign', start: (n) => `${whose(n)} room` } }
 ];
 
 /**
@@ -79,8 +113,14 @@ export const GROUPS: Array<{ id: string; label: string; blurb: string; kinds: Ar
 ];
 
 export const BRAND_KINDS: KindInfo[] = [
-  { id: 'cards', label: 'Business cards', blurb: 'Ten cards, the size of a real one', words: 'One more line (or leave empty)', start: () => '', me: false, pose: false },
-  { id: 'logos', label: 'Logo stickers', blurb: 'Twelve of your logo, for everything you make', words: '', start: () => '', me: false, pose: false }
+  { id: 'cards', label: 'Business cards', blurb: 'Ten cards, the size of a real one', words: '', start: () => '', me: false, pose: false,
+    fields: [
+      { key: 'name', label: 'Name', start: (l, who) => who || l.name || l.brand.name },
+      { key: 'role', label: 'What you do', start: () => 'Stickers · Crafts · Stories' },
+      { key: 'more', label: 'One more line', start: () => 'Ask me to make you one!' },
+      { key: 'studio', label: 'Your studio\'s name at the top', start: () => '1', tick: true }
+    ] },
+  { id: 'logos', label: 'Logo stickers', blurb: 'Twelve of your logo, cut out round its shape', words: '', start: () => '', me: false, pose: false }
 ];
 
 export const W = 210;
@@ -163,7 +203,21 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
   // The character on a sheet with room for one. A sheet with several places
   // goes through everyone she ticked (poseAt), each with their own name.
   const me = firstOf(o.pose, look);
-  const nameAt = (i: number): string => nameFor(poseAt(o, i), look);
+  const info = [...KINDS, ...BRAND_KINDS].find((k) => k.id === kind);
+  /** One of the sheet's other words: what she typed, or what it starts as. */
+  // A My brand sheet is for the brand's person: Sukhi's cards say Sukhi.
+  const forWho = o.brandKey ? nameFor(brandFor(o.brandKey, look).pose ?? look.pose, look) : undefined;
+  const ex = (key: string): string => o.extra?.[key] ?? info?.fields?.find((f) => f.key === key)?.start(look, forWho) ?? '';
+  /** The words for the person in place `i`: hers for them, or what they start as from their name. */
+  const wordsAt = (i: number): string => {
+    const id = poseAt(o, i);
+    const who = personOf(poseOf(id));
+    const name = nameFor(id, look);
+    const mine = who === 'me' || (!!look.name.trim() && name === look.name.trim());
+    return o.names?.[who] ?? info?.named?.start(name, mine) ?? name;
+  };
+  /** The look with a person's brand in it: their character's, or the one a My brand sheet is for. */
+  const branded = (key: string): Look => ({ ...look, brand: brandFor(key, look) });
   const font = fontOf(look);
   const pat = (scale: number): string => defs('p1', o.pattern, look, scale) + defs('p2', o.pattern, swap(look), scale);
 
@@ -171,13 +225,19 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
     case 'stickers': {
       let body = '';
       const text = w || look.name;
+      // With characters on, the round ones have a face each, in turn.
+      let round = 0;
       for (let row = 0; row < 6; row++) {
         for (let col = 0; col < 4; col++) {
           const cx = 37.5 + col * 45;
           const cy = 32 + row * 44;
           const fill = (row + col) % 2 ? 'url(#p2)' : 'url(#p1)';
           const shape = (row * 4 + col) % 3;
-          if (shape === 0) {
+          if (shape === 0 && o.me) {
+            body += `<circle cx="${cx}" cy="${cy}" r="20" fill="${fill}"/>` +
+              `<circle cx="${cx}" cy="${cy}" r="15" fill="#fff"/>` + disc(poseAt(o, round), look, cx, cy, 13.6, `ps${round++}`) +
+              `<circle cx="${cx}" cy="${cy}" r="21.5" ${CUT} stroke="${ink}" opacity=".35"/>`;
+          } else if (shape === 0) {
             const size = fit(text, 24, 7);
             body += `<circle cx="${cx}" cy="${cy}" r="20" fill="${fill}"/><circle cx="${cx}" cy="${cy}" r="13" fill="#fff"/>` +
               `<text x="${cx}" y="${cy + size * 0.35}" text-anchor="middle" font-size="${size}" font-weight="800" fill="${ink}">${esc(text)}</text>` +
@@ -196,6 +256,7 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
 
     case 'faces': {
       let body = '';
+      const named = o.extra?.names === '1';
       for (let row = 0; row < 5; row++) {
         for (let col = 0; col < 4; col++) {
           const i = row * 4 + col;
@@ -203,12 +264,13 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
           const cy = 36 + row * 51;
           body += `<circle cx="${cx}" cy="${cy}" r="21" fill="url(#${i % 2 ? 'p2' : 'p1'})"/>` +
             `<circle cx="${cx}" cy="${cy}" r="17.5" fill="${i % 2 ? look.accent : look.accent2}"/>` +
-            face(poseAt(o, i), cx, cy - (w ? 2.5 : 1), 17.3, `f${i}`);
-          if (w) {
-            // On the ring, below her chin, and still inside the cut line.
-            const size = fit(w, 18, 4);
+            face(poseAt(o, i), cx, cy - (named ? 2.5 : 1), 17.3, `f${i}`);
+          const label = named ? wordsAt(i) : '';
+          if (label) {
+            // On the ring, below the chin, and still inside the cut line.
+            const size = fit(label, 18, 4);
             body += `<rect x="${cx - 11}" y="${cy + 13.5}" width="22" height="6.5" rx="3.25" fill="${look.paper}"/>` +
-              `<text x="${cx}" y="${cy + 16.75 + size * 0.35}" text-anchor="middle" font-size="${size}" font-weight="800" fill="${on(look.paper)}">${esc(w)}</text>`;
+              `<text x="${cx}" y="${cy + 16.75 + size * 0.35}" text-anchor="middle" font-size="${size}" font-weight="800" fill="${on(look.paper)}">${esc(label)}</text>`;
           }
           body += `<circle cx="${cx}" cy="${cy}" r="22.5" ${CUT} stroke="${ink}" opacity=".35"/>`;
         }
@@ -221,7 +283,7 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
       for (let i = 0; i < 4; i++) {
         const x = 15 + i * 47;
         const y = 30;
-        const text = w || (o.me ? nameAt(i) : look.name);
+        const text = o.me ? wordsAt(i) : (w || look.name);
         const size = fit(text, 104, 13);
         body += `<rect x="${x}" y="${y}" width="40" height="196" rx="4" fill="url(#${i % 2 ? 'p2' : 'p1'})"/>` +
           `<rect x="${x + 6}" y="${y + 48}" width="28" height="136" rx="3" fill="#fff" opacity=".94"/>` +
@@ -242,12 +304,12 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
           const y = 16 + row * 37;
           // Two to a row, so each person she ticked gets a row of their own.
           const i = row * 2 + col;
-          const text = w || (o.me ? nameAt(row) : look.name);
+          const text = o.me ? wordsAt(row) : (w || look.name);
           const size = fit(text, 50, 11);
           body += `<rect x="${x}" y="${y}" width="85" height="31" rx="5" fill="#fff" stroke="${look.accent}" stroke-width=".8"/>` +
             `<path d="M${x + 5} ${y} H${x + 26} V${y + 31} H${x + 5} A5 5 0 0 1 ${x} ${y + 26} V${y + 5} A5 5 0 0 1 ${x + 5} ${y}Z" fill="url(#${i % 2 ? 'p2' : 'p1'})"/>`;
           if (o.me) body += disc(poseAt(o, row), look, x + 13, y + 15.5, 11, `l${i}`);
-          body += `<text x="${x + 31}" y="${y + 10.5}" font-size="3.8" fill="${ink}" opacity=".7">This belongs to</text>` +
+          body += `<text x="${x + 31}" y="${y + 10.5}" font-size="${fit(ex('top'), 50, 3.8)}" fill="${ink}" opacity=".7">${esc(ex('top'))}</text>` +
             `<text x="${x + 31}" y="${y + 23}" font-size="${size}" font-weight="800" fill="${ink}">${esc(text)}</text>` +
             `<rect x="${x - 1.5}" y="${y - 1.5}" width="88" height="34" rx="6" ${CUT} stroke="${ink}" opacity=".35"/>`;
         }
@@ -258,7 +320,6 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
     case 'cover': {
       const title = w || `${whose(nameFor(me, look))} Diary`;
       const size = fit(title, 150, 20);
-      const year = new Date().getFullYear();
       const body = `<rect x="10" y="10" width="190" height="277" rx="8" fill="url(#p1)"/>` +
         `<rect x="22" y="22" width="166" height="253" rx="6" fill="${look.paper}"/>` +
         `<rect x="26" y="26" width="158" height="245" rx="4" fill="none" stroke="${look.accent}" stroke-width=".8"/>` +
@@ -267,17 +328,19 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
         `<circle cx="105" cy="146" r="58" fill="${look.accent}" opacity=".2"/>` +
         figure(me, 38, 78, 134, 128) +
         `<rect x="26" y="206" width="158" height="1" fill="${look.accent}" opacity=".6"/>` +
-        // The logo on a diary cover has the cover's character in it, not
-        // whoever is the studio's own: Sukhi's diary has Sukhi on its badge.
-        logo({ ...look, brand: { ...look.brand, pose: me } }, 34, 214, 46) +
+        // The badge is the brand of whoever is on the cover: Sukhi's diary
+        // carries Sukhi's brand, made in My brand.
+        (ex('badge') === '1' ? logo(branded(brandKeyFor(me)), 34, 214, 46) : '') +
         `<g transform="rotate(-8 150 240)"><rect x="118" y="226" width="64" height="24" rx="3" fill="none" stroke="${look.accent2}" stroke-width="1.6"/>` +
         `<text x="150" y="236.5" text-anchor="middle" font-size="6.5" font-weight="900" fill="${look.accent2}" letter-spacing="1">PRIVATE</text>` +
         `<text x="150" y="245" text-anchor="middle" font-size="5" font-weight="800" fill="${look.accent2}" letter-spacing="1">KEEP OUT</text></g>` +
-        `<text x="105" y="268" text-anchor="middle" font-size="5" fill="${look.ink}" opacity=".7" letter-spacing="2">${year}</text>`;
+        `<text x="105" y="268" text-anchor="middle" font-size="5" fill="${look.ink}" opacity=".7" letter-spacing="2">${esc(ex('year'))}</text>`;
       return page(pat(1), body, 'Diary cover', font);
     }
 
     case 'diary': {
+      // The page carries the brand of whoever is on it, or theirs.
+      const pageBrand = brandFor(o.me ? brandKeyFor(me) : brandKeyFor(look.pose), look);
       let lines = '';
       const first = w ? 86 : 76;
       for (let y = first; y <= 272; y += 9) lines += `<path d="M30 ${y} H192" stroke="${look.accent}" stroke-width=".35" opacity=".55"/>`;
@@ -285,7 +348,7 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
       if (o.me) body += disc(me, look, 36, 28, 10.5, 'd1');
       const tx = o.me ? 51 : 30;
       body += `<text x="${tx}" y="27" font-size="10" font-weight="900" fill="${ink}">${esc(whose(o.me ? nameFor(me, look) : look.name))} Diary</text>` +
-        `<text x="${tx}" y="34.5" font-size="4" fill="${look.accent}" font-weight="700" letter-spacing=".6">${esc(look.brand.tagline.toUpperCase())}</text>` +
+        `<text x="${tx}" y="34.5" font-size="4" fill="${look.accent}" font-weight="700" letter-spacing=".6">${esc(pageBrand.tagline.toUpperCase())}</text>` +
         `<text x="140" y="27" font-size="4.5" fill="${ink}" opacity=".7">Date</text><path d="M151 27.5 H192" stroke="${ink}" stroke-width=".4" opacity=".5"/>` +
         `<path d="M30 42 H192" stroke="${look.accent}" stroke-width="1"/>` +
         `<text x="30" y="56.5" font-size="4.5" fill="${ink}" opacity=".75">Today I feel</text>` + moods(66, 55, ink, look.accent) +
@@ -294,7 +357,7 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
         body += `<rect x="30" y="65" width="162" height="12" rx="2" fill="${look.accent}" opacity=".14"/>` +
           `<text x="34" y="73" font-size="${fit(`Write about: ${w}`, 154, 4.8)}" font-weight="800" fill="${ink}">Write about: ${esc(w)}</text>`;
       }
-      body += lines + `<text x="192" y="283" text-anchor="end" font-size="3.5" fill="${ink}" opacity=".5">${esc(look.brand.name)}</text>`;
+      body += lines + `<text x="192" y="283" text-anchor="end" font-size="3.5" fill="${ink}" opacity=".5">${esc(pageBrand.name)}</text>`;
       return page(pat(0.8), body, 'Diary page', font);
     }
 
@@ -351,7 +414,7 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
           `<circle cx="${x + 8}" cy="${y + 30}" r="2.6" fill="#fff" stroke="${ink}" stroke-width=".4"/>`;
         // A tag with a friend's face on it is to them, so it says so; one
         // with her own face is from her, and the To is left to write in.
-        const to = o.me && nameAt(i) !== look.name.trim() ? nameAt(i) : '';
+        const to = o.me ? wordsAt(i) : '';
         if (o.me) body += disc(poseAt(o, i), look, x + 22, y + 30, 10, `g${i}`);
         body += `<text x="${x + 40}" y="${y + 20}" font-size="5" font-weight="800" fill="${look.accent}">To</text>` +
           (to
@@ -378,7 +441,7 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
           `<path d="M${x + 6} ${y} H${x + 81} A6 6 0 0 1 ${x + 87} ${y + 6} V${y + 70} H${x} V${y + 6} A6 6 0 0 1 ${x + 6} ${y}Z" fill="url(#p${i + 1})"/>` +
           `<circle cx="${cx}" cy="${y + 30}" r="17" fill="#fff" stroke="${ink}" stroke-width=".4" stroke-dasharray="2 1.6"/>` +
           `<path d="M${cx} ${y} V${y + 13}" stroke="${ink}" stroke-width=".4" stroke-dasharray="2 1.6"/>` +
-          `<text x="${cx}" y="${y + 88}" text-anchor="middle" font-size="7" font-weight="800" fill="${fg}" opacity=".85">${esc(whose(o.me ? nameAt(i) : look.name))} room</text>` +
+          `<text x="${cx}" y="${y + 88}" text-anchor="middle" font-size="7" font-weight="800" fill="${fg}" opacity=".85">${esc(o.me ? wordsAt(i) : `${whose(look.name)} room`)}</text>` +
           `<text x="${cx}" y="${y + 106}" text-anchor="middle" font-size="${fit(text, 76, 13)}" font-weight="900" fill="${fg}">${esc(text)}</text>`;
         if (o.me) body += figure(o.pose === 'mix' ? poses()[(i + 1) % poses().length].id : poseAt(o, i), x + 5, y + 118, 77, 152);
         body += `<path d="${outline}" ${CUT} stroke="${ink}" opacity=".4"/>`;
@@ -387,27 +450,45 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
     }
 
     case 'cards': {
+      // The card says who she is; the logo's own words would only say it
+      // again, so the card has just the logo's middle, and the words are hers.
+      const lk = branded(o.brandKey ?? brandKeyFor(look.pose));
+      const name = ex('name');
+      const role = ex('role');
+      const more = ex('more');
+      const studio = ex('studio') === '1' ? lk.brand.name.toUpperCase() : '';
       let body = '';
       for (let i = 0; i < 10; i++) {
         const x = 17.5 + (i % 2) * 90;
         const y = 10 + Math.floor(i / 2) * 56;
-        body += `<rect x="${x}" y="${y}" width="85" height="55" rx="3" fill="${look.paper}"/>` +
-          `<path d="M${x} ${y + 47} H${x + 85} V${y + 52} A3 3 0 0 1 ${x + 82} ${y + 55} H${x + 3} A3 3 0 0 1 ${x} ${y + 52}Z" fill="url(#p1)"/>` +
-          logo(look, x + 4, y + 4, 39) +
-          `<text x="${x + 46}" y="${y + 21}" font-size="${fit(look.name || look.brand.name, 36, 9)}" font-weight="900" fill="${look.ink}">${esc(look.name || look.brand.name)}</text>` +
-          `<text x="${x + 46}" y="${y + 28}" font-size="${fit(look.brand.tagline, 36, 3.4)}" font-weight="700" fill="${look.accent}">${esc(look.brand.tagline)}</text>` +
-          (w ? `<text x="${x + 46}" y="${y + 37}" font-size="${fit(w, 36, 3.2)}" fill="${look.ink}" opacity=".8">${esc(w)}</text>` : '') +
+        const clip = `cc${i}`;
+        body += `<clipPath id="${clip}"><rect x="${x}" y="${y}" width="85" height="55" rx="3"/></clipPath>` +
+          `<rect x="${x}" y="${y}" width="85" height="55" rx="3" fill="#fff"/>` +
+          // A panel of her pattern down the left, with her mark on it.
+          `<rect x="${x}" y="${y}" width="30" height="55" fill="url(#p1)" clip-path="url(#${clip})"/>` +
+          `<rect x="${x + 30}" y="${y}" width="1.2" height="55" fill="${lk.accent}"/>` +
+          logoMark(lk, x + 15, y + 27.5, 10.5) +
+          (studio ? `<text x="${x + 36}" y="${y + 11}" font-size="${fit(studio, 44, 3)}" font-weight="800" fill="${lk.accent}" letter-spacing=".5">${esc(studio)}</text>` : '') +
+          `<text x="${x + 36}" y="${y + (studio ? 24 : 21)}" font-size="${fit(name, 45, 8.5)}" font-weight="900" fill="${ink}">${esc(name)}</text>` +
+          (role ? `<text x="${x + 36}" y="${y + (studio ? 31 : 28)}" font-size="${fit(role, 45, 3.6)}" font-weight="700" fill="${lk.accent}">${esc(role)}</text>` : '') +
+          `<path d="M${x + 36} ${y + 37} H${x + 60}" stroke="${lk.accent2}" stroke-width="1.2" stroke-linecap="round"/>` +
+          (more ? `<text x="${x + 36}" y="${y + 45}" font-size="${fit(more, 45, 3.3)}" fill="${ink}" opacity=".8">${esc(more)}</text>` : '') +
           `<rect x="${x}" y="${y}" width="85" height="55" rx="3" fill="none" stroke="${ink}" stroke-width=".25" opacity=".4"/>`;
       }
       return page(pat(0.6), body, 'Business cards', font);
     }
 
     case 'logos': {
+      // Each one cut round its own shape: a patch, not a square with a badge on it.
+      const lk = branded(o.brandKey ?? brandKeyFor(look.pose));
+      const outline = logoOutline(lk.brand.style);
       let body = '';
       for (let i = 0; i < 12; i++) {
-        const x = 20 + (i % 3) * 60;
-        const y = 16 + Math.floor(i / 3) * 66;
-        body += logo(look, x, y, 52) + `<rect x="${x - 3}" y="${y - 3}" width="58" height="58" rx="10" ${CUT} stroke="${ink}" opacity=".3"/>`;
+        const x = 22 + (i % 3) * 60;
+        const y = 18 + Math.floor(i / 3) * 66;
+        const k = 52 / 100;
+        body += logo(lk, x, y, 52) +
+          `<path d="${outline}" transform="translate(${x} ${y}) scale(${k})" fill="none" stroke="${ink}" stroke-width="${(0.35 / k).toFixed(2)}" stroke-dasharray="${(2 / k).toFixed(2)} ${(1.6 / k).toFixed(2)}" opacity=".45"/>`;
       }
       return page('', body, 'Logo stickers', font);
     }

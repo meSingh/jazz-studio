@@ -13,7 +13,9 @@
  */
 import type { Look } from '../look';
 import { light, fontOf } from '../look';
-import { logo } from '../brand';
+import { logo, fit } from '../brand';
+import { face, brandFor, brandKeyFor, type PoseId } from '../character';
+import { esc } from '../sheets';
 
 type Glyph = { lines: string; dot: [number, number] | null };
 
@@ -93,14 +95,27 @@ export function key (x: number, y: number, cell: number, ink: string, accent: st
 }
 
 /** The printed page: the message in pigpen, and a key to cut off and give to a friend. */
-export function secretSheet (message: string, look: Look): string {
+/** What goes at the top of a secret message, which is hers to choose. */
+export interface SecretTop {
+  /** Her brand's logo, a character's face, or just the words. */
+  show: 'logo' | 'me' | 'none';
+  pose: PoseId;
+  title: string;
+  line: string;
+}
+
+export function secretSheet (message: string, look: Look, top: SecretTop): string {
   const ink = light(look.ink) > 0.6 ? look.paper : look.ink;
   const s = 11;
   const glyphs = layout(message || 'Hello', 176, s).filter((g) => g.y < 150);
-  const body = `<rect x="10" y="10" width="190" height="8" rx="3" fill="${look.accent}"/>` +
-    logo(look, 14, 22, 26) +
-    `<text x="46" y="36" font-size="10" font-weight="900" fill="${ink}">Top secret</text>` +
-    `<text x="46" y="43" font-size="4" fill="${look.accent}" font-weight="700">Only someone with the key can read this</text>` +
+  const title = top.title.trim() || 'Top secret';
+  const tx = top.show === 'none' ? 17 : 46;
+  const pic = top.show === 'logo' ? logo({ ...look, brand: brandFor(brandKeyFor(top.pose), look) }, 14, 22, 26)
+    : top.show === 'me' ? `<circle cx="27" cy="35" r="13" fill="${look.accent2}"/>` + face(top.pose, 27, 34.5, 12.7, 'sq')
+    : '';
+  const body = `<rect x="10" y="10" width="190" height="8" rx="3" fill="${look.accent}"/>` + pic +
+    `<text x="${tx}" y="36" font-size="${fit(title, 150, 10)}" font-weight="900" fill="${ink}">${esc(title)}</text>` +
+    (top.line.trim() ? `<text x="${tx}" y="43" font-size="${fit(top.line, 150, 4)}" fill="${look.accent}" font-weight="700">${esc(top.line)}</text>` : '') +
     glyphs.map((g) => draw(g.ch, 17 + g.x, 60 + g.y, s, ink, 1.1)).join('') +
     `<rect x="12" y="206" width="186" height="78" rx="5" fill="none" stroke="${ink}" stroke-width=".35" stroke-dasharray="2 1.6" opacity=".6"/>` +
     `<text x="20" y="217" font-size="5" font-weight="900" fill="${ink}">The key</text>` +
