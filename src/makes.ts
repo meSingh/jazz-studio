@@ -1,5 +1,7 @@
+import type { Kept } from './prints';
+
 /**
- * My makes: photos of finished things, kept on this device.
+ * My makes: photos of finished things, and prints to use again, kept on this device.
  *
  * IndexedDB rather than localStorage because photos are big. They are shrunk
  * before saving, since a phone camera's twelve megapixels are not needed to
@@ -12,6 +14,8 @@ export interface Make {
   note: string;
   made: number;
   photo: Blob | null;
+  /** A print she kept to use again: its settings, not a picture of it (see prints.ts). */
+  print?: Kept;
 }
 
 const DB = 'jazz-studio';

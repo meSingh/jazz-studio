@@ -14,6 +14,7 @@ import {
   patternPicker, wirePatterns, posePicker, refresh, remembered, sheetDesign, type Design
 } from '../ui';
 import { stationeryState } from './stationery';
+import { register, showing, designOf } from '../prints';
 
 export const PLAYTHINGS: Array<{ id: string; title: string; blurb: string; pose: PoseId }> = [
   { id: 'poster', title: 'Name poster', blurb: 'Your name, huge, in your pattern', pose: 'cool' },
@@ -35,7 +36,9 @@ export function playRoom (main: HTMLElement, sub: string): void {
 
 /* Name poster ------------------------------------------------------------ */
 
-const posterState = remembered<{ name: string; line: string; pose: PoseId; dark: boolean; design?: Design }>('jazz-studio-poster',
+interface PosterSettings { name: string; line: string; pose: PoseId; dark: boolean }
+
+const posterState = remembered<PosterSettings & { design?: Design }>('jazz-studio-poster',
   { name: '', line: '', pose: 'cool', dark: true });
 
 const posterDesign = sheetDesign(() => posterState.get().design, (d) => posterState.set({ design: d }));
@@ -67,7 +70,23 @@ function poster (main: HTMLElement): void {
   wirePatterns(main, posterDesign);
   wireColours(main, posterDesign);
   wirePrint(main);
+  showing(() => {
+    const { name, line, pose, dark } = posterState.get();
+    return { tool: 'poster', settings: { name, line, pose, dark }, design: designOf(posterDesign.get()) };
+  });
 }
+
+register('poster', {
+  draw: (k, l) => {
+    const s = k.settings as unknown as PosterSettings;
+    return posterSheet(s.name, s.line, s.pose, s.dark, l);
+  },
+  open: (k) => {
+    posterState.set({ ...(k.settings as unknown as PosterSettings), design: k.design });
+    location.hash = '#/play/poster';
+  },
+  name: (k) => `Name poster: ${(k.settings as unknown as PosterSettings).name || look().name}`
+});
 
 /* Secret codes ----------------------------------------------------------- */
 
@@ -103,7 +122,17 @@ function secret (main: HTMLElement): void {
   });
   wireColours(main, secretDesign);
   wirePrint(main);
+  showing(() => ({ tool: 'secret', settings: { message: secretState.get().message }, design: designOf(secretDesign.get()) }));
 }
+
+register('secret', {
+  draw: (k, l) => secretSheet(String(k.settings.message ?? ''), l),
+  open: (k) => {
+    secretState.set({ message: String(k.settings.message ?? ''), design: k.design });
+    location.hash = '#/play/secret';
+  },
+  name: () => 'Secret message'
+});
 
 /* Story sparks ----------------------------------------------------------- */
 

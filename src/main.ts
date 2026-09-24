@@ -25,6 +25,7 @@ import { install, installed } from './install';
 import sukhiMark from './assets/sukhi.png';
 import { inSukhiPlay } from './ui';
 import { openKeep } from './rooms/keep';
+import { showing } from './prints';
 
 const app = document.getElementById('app')!;
 
@@ -35,7 +36,7 @@ const ROOMS: Record<Exclude<Room, 'home'>, { title: string; icon: string; blurb:
   box: { title: 'Make from a box', icon: ICONS.box, blurb: 'Wraps that fit your rolls, boxes and cartons', pose: 'hello', pattern: 'stripes' },
   brand: { title: 'My brand', icon: ICONS.star, blurb: 'Your own logo, and business cards', pose: 'cool', pattern: 'triangles' },
   play: { title: 'Play', icon: ICONS.play, blurb: 'Name posters, secret codes, story sparks, doodles', pose: 'idea', pattern: 'bolts' },
-  makes: { title: 'My makes', icon: ICONS.camera, blurb: 'Photos of everything you have made', pose: 'wink', pattern: 'confetti' },
+  makes: { title: 'My makes', icon: ICONS.camera, blurb: 'Your prints to use again, and photos of what you made', pose: 'wink', pattern: 'confetti' },
   yours: { title: 'Make it yours', icon: ICONS.palette, blurb: 'Your character, your name, your colours', pose: 'portrait', pattern: 'waves' }
 };
 
@@ -61,6 +62,8 @@ function render (keepScroll = false): void {
   app.innerHTML = top(room, thing?.title) + '<main class="room"></main>' + foot();
   app.querySelector('.keep-btn')?.addEventListener('click', openKeep);
   const main = app.querySelector('main')!;
+  // Nothing to keep until a tool that prints says what it is showing.
+  showing(null);
   if (room === 'home') home(main);
   else if (room === 'stationery') stationeryRoom(main, sub);
   else if (room === 'box') boxRoom(main);

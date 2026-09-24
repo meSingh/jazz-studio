@@ -7,9 +7,10 @@
  */
 import { look, setLook, type LogoStyle } from '../look';
 import { logoSvg, LOGO_STYLES } from '../brand';
-import { BRAND_KINDS } from '../sheets';
+import { BRAND_KINDS, sheet } from '../sheets';
 import { esc, field, heading, wireChoice, posePicker, remembered, refresh } from '../ui';
-import { bench, designFor, type BenchState } from './bench';
+import { bench, designFor, reopen, type BenchState, type SheetSettings } from './bench';
+import { register } from '../prints';
 
 const state = remembered<BenchState>('jazz-studio-brand-bench', { kind: 'cards', me: true, pose: 'portrait', words: {} });
 
@@ -35,7 +36,7 @@ export function brandRoom (main: HTMLElement): void {
       <p class="hint">Your logo goes on your diary cover and your business cards.</p>
     </div>
   </section>`;
-  bench(main, BRAND_KINDS, state, top);
+  bench(main, BRAND_KINDS, state, 'brand', top);
 
   wireChoice(main, 'logo', (s) => { setLook({ brand: { ...look().brand, style: s as LogoStyle } }); refresh(); });
   wireChoice(main, 'middle', (m) => { setLook({ brand: { ...look().brand, me: m === 'me' } }); refresh(); });
@@ -52,3 +53,24 @@ export function brandRoom (main: HTMLElement): void {
   text('.b-name', 'name');
   text('.b-tag', 'tagline');
 }
+
+/*
+ * A kept card or logo sheet. It keeps the logo as it was, and opening it
+ * brings that logo back: the logo is what she was making here.
+ */
+register('brand', {
+  draw: (k, l) => {
+    const s = k.settings as unknown as SheetSettings;
+    return sheet(s.kind, { pattern: l.pattern, words: s.words, me: s.me, pose: s.pose }, l);
+  },
+  open: (k) => {
+    reopen(state, k.settings as unknown as SheetSettings, k.design);
+    if (k.brand) setLook({ brand: k.brand });
+    location.hash = '#/brand';
+  },
+  name: (k) => {
+    const s = k.settings as unknown as SheetSettings;
+    const label = BRAND_KINDS.find((x) => x.id === s.kind)?.label ?? 'My brand';
+    return k.brand?.name ? `${label}: ${k.brand.name}` : label;
+  }
+});

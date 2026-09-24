@@ -345,6 +345,10 @@ img { display: block; max-width: 100%; }
 }
 .go svg { width: 24px; height: 24px; }
 .go:active { transform: translateY(4px); box-shadow: 0 1px 0 color-mix(in srgb, var(--accent) 55%, #000); }
+/* Print, and beside it Keep in My makes, which does not print. */
+.print-buttons { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+.print-buttons .go { margin: 0; flex: 1 1 200px; }
+.print-buttons .keep-it { flex: 0 1 auto; }
 .print-status { margin: 10px 0 0; font-weight: 800; color: var(--accent2); }
 .print-status:empty { display: none; }
 .print-status[data-ok="no"] { color: #ff8a8a; }
@@ -784,6 +788,38 @@ img { display: block; max-width: 100%; }
 .made time { display: block; margin: 0 2px; font-size: 13px; opacity: .6; }
 .made p { margin: 6px 2px 0; font-size: 15px; }
 
+/* Your prints: her library of things to print again, drawn from their settings. */
+.library { margin-bottom: 34px; }
+.prints-shelf {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 26px 20px;
+}
+/* Two to a row on a phone: a whole screen for each was a lot of scrolling. */
+@media (max-width: 480px) {
+  .prints-shelf { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 14px; }
+  .kept-print h3 { font-size: 15px; }
+  .kept-buttons .go--small { padding: 8px 12px; font-size: 15px; }
+}
+.kept-print {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  transform: rotate(var(--tilt, 0deg));
+}
+.kept-open { display: block; padding: 0; border: 0; background: none; cursor: pointer; }
+.kept-open .sheet-mini { transition: transform .15s; }
+.kept-open:hover .sheet-mini { transform: translateY(-3px); }
+.kept-print h3 { margin: 4px 2px 0; font-size: 17px; overflow-wrap: anywhere; }
+.kept-print time { margin: 0 2px; font-size: 13px; opacity: .65; }
+.kept-buttons { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.kept-buttons .quiet { margin: 0; }
+
+.go--small { width: auto; margin: 0; padding: 9px 16px; font-size: 16px; gap: 8px; box-shadow: 0 3px 0 color-mix(in srgb, var(--accent) 55%, #000); }
+.go--small svg { width: 20px; height: 20px; }
+
+.photo-drop[data-over] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+
 /* Make it yours ---------------------------------------------------- */
 
 .yours { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
@@ -1028,6 +1064,13 @@ dialog.ask h2 { margin: 10px 0 8px; font-size: 22px; font-weight: var(--heavy); 
   color: #ff8a8a;
 }
 .again-art svg, .ask-icon svg { width: 32px; height: 32px; }
+.ask-icon--keep { background: color-mix(in srgb, var(--accent) 25%, var(--card2)); color: var(--accent); }
+dialog.keep-print .field { margin-top: 10px; text-align: left; }
+dialog.keep-print .field input { width: 100%; }
+.kp-done { margin: 12px 0 0; font-weight: 800; color: var(--accent2); text-align: center; }
+.kp-done:empty { display: none; }
+.ask-art .ask-sheet { display: block; width: 90px; aspect-ratio: 210 / 297; overflow: hidden; border-radius: 6px; background: #fff; }
+.ask-art .ask-sheet svg { display: block; width: 100%; height: 100%; }
 .again-lists { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 18px 0 8px; text-align: left; }
 .again-lists > div { padding: 12px 16px; border-radius: 14px; background: var(--card2); }
 .again-lists h3 { margin: 0 0 6px; font-size: 15px; }

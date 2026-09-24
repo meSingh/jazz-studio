@@ -9,7 +9,8 @@
  */
 import { KINDS, GROUPS, sheet, type Kind } from '../sheets';
 import { remembered, scoped } from '../ui';
-import { bench, designFor, type BenchState } from './bench';
+import { bench, designFor, reopen, type BenchState, type SheetSettings } from './bench';
+import { register } from '../prints';
 
 export const stationeryState = remembered<BenchState>('jazz-studio-stationery',
   { kind: 'faces', me: true, pose: 'mix', words: {} });
@@ -24,7 +25,7 @@ export function stationeryRoom (main: HTMLElement, sub: string): void {
     // The sheet she last used in this group, or its first.
     stationeryState.set({ kind: group.kinds.some((k) => k.id === wanted) ? wanted : group.kinds[0].id });
     const kinds = group.kinds.map((g) => KINDS.find((k) => k.id === g.id)!);
-    bench(main, kinds, stationeryState, '', Object.fromEntries(group.kinds.map((g) => [g.id, g.short])));
+    bench(main, kinds, stationeryState, 'stationery', '', Object.fromEntries(group.kinds.map((g) => [g.id, g.short])));
     return;
   }
   const s = stationeryState.get();
@@ -39,3 +40,22 @@ export function stationeryRoom (main: HTMLElement, sub: string): void {
       `<span class="sheet-count">${g.kinds.map((k) => k.short).join(' · ')}</span></a>`;
   }).join('')}</div>`;
 }
+
+/* A kept sheet, in My makes: drawn as it was, and opened in its group. */
+register('stationery', {
+  draw: (k, l) => {
+    const s = k.settings as unknown as SheetSettings;
+    return sheet(s.kind, { pattern: l.pattern, words: s.words, me: s.me, pose: s.pose }, l);
+  },
+  open: (k) => {
+    const s = k.settings as unknown as SheetSettings;
+    reopen(stationeryState, s, k.design);
+    const group = GROUPS.find((g) => g.kinds.some((x) => x.id === s.kind));
+    location.hash = `#/stationery/${group?.id ?? s.kind}`;
+  },
+  name: (k) => {
+    const s = k.settings as unknown as SheetSettings;
+    const label = KINDS.find((x) => x.id === s.kind)?.label ?? 'My sheet';
+    return s.words ? `${label}: ${s.words}` : label;
+  }
+});

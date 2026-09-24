@@ -13,8 +13,11 @@ import {
   patternPicker, wirePatterns, posePicker, refresh, remembered, sheetDesign, type Design
 } from '../ui';
 import type { PoseId } from '../character';
+import { register, showing, designOf } from '../prints';
 
-const state = remembered<{ project: string; width: number; height: number; tab: boolean; words: string; me: boolean; pose: PoseId | ''; design?: Design }>(
+interface WrapSettings { project: string; width: number; height: number; tab: boolean; words: string; me: boolean; pose: PoseId | '' }
+
+const state = remembered<WrapSettings & { design?: Design }>(
   'jazz-studio-box', { project: 'pencil-pot', width: 15.5, height: 10, tab: true, words: '', me: true, pose: '' });
 
 /** Small drawings for the project cards. */
@@ -100,5 +103,27 @@ export function boxRoom (main: HTMLElement): void {
   wirePatterns(main, design);
   wireColours(main, design);
   wirePrint(main);
+  showing(() => {
+    const { project, width, height, tab, words, me, pose } = state.get();
+    return { tool: 'box', settings: { project, width, height, tab, words, me, pose }, design: designOf(design.get()) };
+  });
   redraw();
 }
+
+/* A kept wrap, in My makes: the same project, the same size, the same look. */
+register('box', {
+  draw: (k, l) => {
+    const s = k.settings as unknown as WrapSettings;
+    const project = PROJECTS.find((p) => p.id === s.project) ?? PROJECTS[0];
+    return wrapSheet({ width: s.width, height: s.height, tab: s.tab, title: project.title }, l.pattern, s.words, s.me, l, s.pose || l.pose);
+  },
+  open: (k) => {
+    state.set({ ...(k.settings as unknown as WrapSettings), design: k.design });
+    location.hash = '#/box';
+  },
+  name: (k) => {
+    const s = k.settings as unknown as WrapSettings;
+    const title = PROJECTS.find((p) => p.id === s.project)?.title ?? 'Wrap';
+    return s.words ? `${title}: ${s.words}` : title;
+  }
+});

@@ -17,6 +17,7 @@ import {
   patternPicker, wirePatterns, posePicker, refresh, remembered, scoped, sheetDesign,
   type Design, type DesignTarget
 } from '../ui';
+import { showing, designOf } from '../prints';
 
 export interface BenchState {
   kind: Kind;
@@ -37,11 +38,25 @@ export function designFor (state: Bench, kind: Kind): DesignTarget {
   );
 }
 
+/** What a bench keeps in My makes for one sheet (see prints.ts). */
+export interface SheetSettings { kind: Kind; me: boolean; pose: PoseId | 'mix'; words: string }
+
+/** Puts a bench back to a kept sheet: that sheet chosen, with its words and design. */
+export function reopen (state: Bench, s: SheetSettings, design: Design): void {
+  const now = state.get();
+  state.set({
+    kind: s.kind, me: s.me, pose: s.pose,
+    words: { ...now.words, [s.kind]: s.words },
+    designs: { ...now.designs, [s.kind]: design }
+  });
+}
+
 /**
  * `names` gives each sheet the name to show here, when the page's own title
  * already says what kind of thing they are ("Cover" rather than "Diary cover").
+ * `tool` is the name its prints are kept under in My makes.
  */
-export function bench (main: HTMLElement, kinds: KindInfo[], state: Bench, top = '', names: Partial<Record<Kind, string>> = {}): void {
+export function bench (main: HTMLElement, kinds: KindInfo[], state: Bench, tool: string, top = '', names: Partial<Record<Kind, string>> = {}): void {
   const s = state.get();
   const kind = kinds.find((k) => k.id === s.kind) ?? kinds[0];
   const design = designFor(state, kind.id);
@@ -93,4 +108,9 @@ export function bench (main: HTMLElement, kinds: KindInfo[], state: Bench, top =
     main.querySelector('.print-area')!.innerHTML = sheet(kind.id, opts(), design.get());
   });
   wirePrint(main);
+  showing(() => {
+    const now = state.get();
+    const settings: SheetSettings = { kind: kind.id, me: now.me, pose: now.pose, words: now.words[kind.id] ?? '' };
+    return { tool, settings: { ...settings }, design: designOf(design.get()), ...(tool === 'brand' ? { brand: { ...design.get().brand } } : {}) };
+  });
 }

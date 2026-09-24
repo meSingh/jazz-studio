@@ -43,7 +43,9 @@ export function heading (text: string): string {
 }
 
 export function printButton (label = 'Print it'): string {
-  return `<button type="button" class="go print">${ICONS.print}<span>${label}</span></button>` +
+  // Keep is wired in prints.ts, which knows what the tool is showing.
+  return `<div class="print-buttons"><button type="button" class="go print">${ICONS.print}<span>${label}</span></button>` +
+    `<button type="button" class="go go--ghost keep-it">${ICONS.star}<span>Keep in My makes</span></button></div>` +
     '<p class="print-status" role="status"></p>';
 }
 
@@ -70,7 +72,7 @@ window.addEventListener('sukhiplay:print', (e) => {
 export function wirePrint (root: HTMLElement): void {
   root.querySelectorAll<HTMLButtonElement>('.print').forEach((b) => b.addEventListener('click', () => {
     if (inSukhiPlay) {
-      status = b.nextElementSibling as HTMLElement | null;
+      status = b.closest('.print-buttons')?.nextElementSibling as HTMLElement | null;
       if (status) { status.textContent = 'Sending it to the printer...'; delete status.dataset.ok; }
     }
     readyToPrint();
