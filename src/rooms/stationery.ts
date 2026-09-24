@@ -1,44 +1,42 @@
 /**
- * Stationery: a tile for each thing she can make, then one thing at a time.
+ * Stationery: five tiles, then one group at a time.
  *
- * Like Play: the room opens on a grid of tiles, each a small live preview of
- * that sheet in her pattern and colours, with its name and what it is for.
- * Choosing one opens it on its own (#/stationery/labels and so on), so she is
- * working on one sheet, not choosing between eleven while she does.
+ * Like Play: the room opens on a grid of tiles, one for each group of sheets
+ * (see GROUPS in sheets.ts), each a live preview in her pattern and colours.
+ * A tile opens its group (#/stationery/diary and so on), which starts with a
+ * picture of each sheet in it to choose between. Things that are nearly the
+ * same are next to each other, so switching is one tap on the same page.
  */
 import { look } from '../look';
-import { KINDS, sheet, type Kind } from '../sheets';
-import { remembered } from '../ui';
+import { KINDS, GROUPS, sheet, type Kind } from '../sheets';
+import { remembered, scoped } from '../ui';
 import { bench, type BenchState } from './bench';
 
 export const stationeryState = remembered<BenchState>('jazz-studio-stationery',
   { kind: 'faces', me: true, pose: 'mix', words: {} });
 
-/**
- * Prefixes every id in an SVG, and every reference to one. Each sheet names
- * its patterns p1 and p2; eleven of them on one page would all use whichever
- * came first.
- */
-function scoped (svg: string, prefix: string): string {
-  return svg
-    .replace(/id="([^"]+)"/g, `id="${prefix}$1"`)
-    .replace(/url\(#([^)]+)\)/g, `url(#${prefix}$1)`)
-    .replace(/href="#([^"]+)"/g, `href="#${prefix}$1"`);
-}
-
 export function stationeryRoom (main: HTMLElement, sub: string): void {
-  const kind = KINDS.find((k) => k.id === sub);
-  if (kind) {
-    stationeryState.set({ kind: kind.id as Kind });
-    bench(main, [kind], stationeryState);
+  // A sheet's own address from before the groups (#/stationery/labels) still
+  // lands in the right place.
+  const group = GROUPS.find((g) => g.id === sub) ?? GROUPS.find((g) => g.kinds.some((k) => k.id === sub));
+  if (group) {
+    const s = stationeryState.get();
+    const wanted = group.kinds.some((k) => k.id === sub) ? sub as Kind : s.kind;
+    // The sheet she last used in this group, or its first.
+    stationeryState.set({ kind: group.kinds.some((k) => k.id === wanted) ? wanted : group.kinds[0].id });
+    const kinds = group.kinds.map((g) => KINDS.find((k) => k.id === g.id)!);
+    bench(main, kinds, stationeryState, '', Object.fromEntries(group.kinds.map((g) => [g.id, g.short])));
     return;
   }
   const s = stationeryState.get();
   const l = look();
-  main.innerHTML = `<div class="sheets-hub">${KINDS.map((k, i) => {
-    const preview = sheet(k.id, { pattern: l.pattern, words: s.words[k.id] ?? '', me: s.me, pose: s.pose }, l);
-    return `<a class="sheet-tile" href="#/stationery/${k.id}" style="--tilt:${[-0.8, 0.6, -0.4, 0.9, -0.6][i % 5]}deg">` +
+  main.innerHTML = `<div class="sheets-hub">${GROUPS.map((g, i) => {
+    // The tile shows the sheet she last used in the group, if she has.
+    const shown = g.kinds.find((k) => k.id === s.kind)?.id ?? g.kinds[0].id;
+    const preview = sheet(shown, { pattern: l.pattern, words: s.words[shown] ?? '', me: s.me, pose: s.pose }, l);
+    return `<a class="sheet-tile" href="#/stationery/${g.id}" style="--tilt:${[-0.8, 0.6, -0.4, 0.9, -0.6][i % 5]}deg">` +
       `<span class="sheet-mini">${scoped(preview, `k${i}-`)}</span>` +
-      `<span class="sheet-name">${k.label}</span><span class="sheet-blurb">${k.blurb}</span></a>`;
+      `<span class="sheet-name">${g.label}</span><span class="sheet-blurb">${g.blurb}</span>` +
+      `<span class="sheet-count">${g.kinds.map((k) => k.short).join(' · ')}</span></a>`;
   }).join('')}</div>`;
 }

@@ -16,7 +16,7 @@ import { logo, fit } from './brand';
 
 export type Kind =
   | 'stickers' | 'faces' | 'bookmarks' | 'labels' | 'cover' | 'diary'
-  | 'planner' | 'todo' | 'tags' | 'door' | 'letter' | 'cards' | 'logos';
+  | 'planner' | 'todo' | 'tags' | 'door' | 'cards' | 'logos';
 
 export interface Options {
   pattern: PatternName;
@@ -47,8 +47,27 @@ export const KINDS: KindInfo[] = [
   { id: 'planner', label: 'Week planner', blurb: 'Every day of the week, and a goal', words: 'Title', start: (l) => `${l.name}'s Week`, me: true, pose: false },
   { id: 'todo', label: 'To-do lists', blurb: 'Two lists to a page, with boxes to tick', words: 'Title', start: () => 'Things to do', me: true, pose: false },
   { id: 'tags', label: 'Gift tags', blurb: 'Eight tags. Punch a hole and add ribbon', words: 'From', start: (l) => l.name, me: true, pose: false },
-  { id: 'door', label: 'Door sign', blurb: 'Two hangers for your door handle', words: 'What the sign says', start: () => 'Knock first!', me: true, pose: true },
-  { id: 'letter', label: 'Letter paper', blurb: 'Your own letter paper, with your logo', words: 'A motto for the top (or leave empty)', start: () => '', me: true, pose: false }
+  { id: 'door', label: 'Door sign', blurb: 'Two hangers for your door handle', words: 'What the sign says', start: () => 'Knock first!', me: true, pose: true }
+];
+
+/**
+ * The sheets in five groups, one tile each. Things that are nearly the same
+ * sit together, so switching between them is one tap on the same page rather
+ * than back to the grid and into another tile. `short` is the name used
+ * inside the group, where the group's own name says the rest. Group ids are
+ * never a sheet's id, so an address says which it means.
+ */
+export const GROUPS: Array<{ id: string; label: string; blurb: string; kinds: Array<{ id: Kind; short: string }> }> = [
+  { id: 'sticker-sheets', label: 'Stickers', blurb: 'With your face on them, or in your pattern',
+    kinds: [{ id: 'faces', short: 'Me stickers' }, { id: 'stickers', short: 'Pattern stickers' }] },
+  { id: 'diary-set', label: 'Diary', blurb: 'A cover with you on it, and pages to write in',
+    kinds: [{ id: 'cover', short: 'Cover' }, { id: 'diary', short: 'Pages' }] },
+  { id: 'labels-and-tags', label: 'Labels and tags', blurb: 'Name labels for your things, and tags for presents',
+    kinds: [{ id: 'labels', short: 'Name labels' }, { id: 'tags', short: 'Gift tags' }] },
+  { id: 'planners', label: 'Planners and lists', blurb: 'Your week, and things to do',
+    kinds: [{ id: 'planner', short: 'Week planner' }, { id: 'todo', short: 'To-do lists' }] },
+  { id: 'signs', label: 'Bookmarks and signs', blurb: 'For your books and your bedroom door',
+    kinds: [{ id: 'bookmarks', short: 'Bookmarks' }, { id: 'door', short: 'Door signs' }] }
 ];
 
 export const BRAND_KINDS: KindInfo[] = [
@@ -333,21 +352,6 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
         body += `<path d="${outline}" ${CUT} stroke="${ink}" opacity=".4"/>`;
       }
       return page(pat(1), body, 'Door sign');
-    }
-
-    case 'letter': {
-      let lines = '';
-      for (let y = 78; y <= 262; y += 9) lines += `<path d="M22 ${y} H188" stroke="${look.accent}" stroke-width=".3" opacity=".45"/>`;
-      const tx = o.me ? 60 : 22;
-      const body = `<rect x="10" y="10" width="190" height="6" rx="3" fill="url(#p1)"/>` +
-        (o.me ? logo(look, 18, 21, 38) : '') +
-        `<text x="${tx}" y="38" font-size="${fit(look.brand.name, 80, 12)}" font-weight="900" fill="${ink}">${esc(look.brand.name)}</text>` +
-        `<text x="${tx}" y="46" font-size="4.5" font-weight="700" fill="${look.accent}" letter-spacing=".6">${esc(look.brand.tagline.toUpperCase())}</text>` +
-        (w ? `<text x="188" y="30" text-anchor="end" font-size="${fit(w, 60, 4)}" fill="${ink}" opacity=".75">${esc(w)}</text>` : '') +
-        `<text x="160" y="46" text-anchor="end" font-size="4" fill="${ink}" opacity=".6">Date</text><path d="M162 46.5 H188" stroke="${ink}" stroke-width=".35" opacity=".4"/>` +
-        `<path d="M22 64 H188" stroke="${look.accent}" stroke-width=".8"/>` + lines +
-        `<rect x="10" y="276" width="190" height="6" rx="3" fill="url(#p1)"/>`;
-      return page(pat(0.8), body, 'Letter paper');
     }
 
     case 'cards': {

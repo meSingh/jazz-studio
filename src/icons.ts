@@ -22,6 +22,7 @@ export const ICONS = {
   left: icon('<path d="M19 12H5M11 6l-6 6 6 6"/>'),
   right: icon('<path d="M5 12h14M13 6l6 6-6 6"/>'),
   reset: icon('<path d="M4 12a8 8 0 1 0 2.3-5.7"/><path d="M4 4v5h5"/>'),
+  tick: icon('<path d="M5 12.5l4.5 4.5L19 7.5"/>'),
   up: icon('<path d="M12 19V5M6 11l6-6 6 6"/>'),
   down: icon('<path d="M12 5v14M6 13l6 6 6-6"/>'),
   bigger: icon('<circle cx="11" cy="11" r="7"/><path d="M11 8v6M8 11h6M16 16l4 4"/>'),

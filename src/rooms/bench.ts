@@ -14,7 +14,7 @@ import { sheet, type Kind, type KindInfo, type Options } from '../sheets';
 import type { PoseId } from '../character';
 import {
   esc, field, heading, printButton, wirePrint, wireChoice, colourBar, wireColours,
-  patternPicker, wirePatterns, posePicker, refresh, remembered
+  patternPicker, wirePatterns, posePicker, refresh, remembered, scoped
 } from '../ui';
 
 export interface BenchState {
@@ -26,7 +26,11 @@ export interface BenchState {
 
 export type Bench = ReturnType<typeof remembered<BenchState>>;
 
-export function bench (main: HTMLElement, kinds: KindInfo[], state: Bench, top = ''): void {
+/**
+ * `names` gives each sheet the name to show here, when the page's own title
+ * already says what kind of thing they are ("Cover" rather than "Diary cover").
+ */
+export function bench (main: HTMLElement, kinds: KindInfo[], state: Bench, top = '', names: Partial<Record<Kind, string>> = {}): void {
   const s = state.get();
   const kind = kinds.find((k) => k.id === s.kind) ?? kinds[0];
   const l = look();
@@ -35,13 +39,19 @@ export function bench (main: HTMLElement, kinds: KindInfo[], state: Bench, top =
     return { pattern: look().pattern, words: now.words[kind.id] ?? '', me: now.me, pose: now.pose };
   };
 
-  // One kind is a sheet opened on its own from a tile; several (My brand)
-  // still choose between them here.
+  // When there is a choice of sheet, it comes first, as a picture of each:
+  // easier to tell apart than two names.
+  const optionFor = (k: KindInfo, i: number): string => {
+    const o = { pattern: l.pattern, words: s.words[k.id] ?? '', me: s.me, pose: s.pose };
+    return `<button type="button" class="sheet-option" role="radio" data-kind="${k.id}" aria-checked="${k.id === kind.id}">` +
+      `<span class="sheet-mini">${scoped(sheet(k.id, o, l), `o${i}-`)}</span>` +
+      `<span class="sheet-name">${esc(names[k.id] ?? k.label)}</span><span class="sheet-blurb">${k.blurb}</span></button>`;
+  };
   main.innerHTML = `${top}<div class="workbench">
     <section class="controls">
-      ${kinds.length > 1 ? heading('What to make') + `<div class="chips kinds" role="radiogroup" aria-label="What to make">${kinds.map((k) =>
-        `<button type="button" class="chip" role="radio" data-kind="${k.id}" aria-checked="${k.id === kind.id}">${k.label}</button>`).join('')}</div>` : ''}
-      <p class="hint">${kind.blurb}</p>
+      ${kinds.length > 1
+        ? heading('Which one') + `<div class="sheet-options" role="radiogroup" aria-label="Which one">${kinds.map(optionFor).join('')}</div>`
+        : `<p class="hint">${kind.blurb}</p>`}
       ${kind.me ? `<label class="tick"><input type="checkbox" class="me" ${s.me ? 'checked' : ''}><span>Put me on it</span></label>` : ''}
       ${kind.pose || (kind.me && s.me) ? heading('Which you') + posePicker(s.pose === 'mix' && kind.id !== 'faces' ? l.pose : s.pose, kind.id === 'faces') : ''}
       ${heading('Pattern')}

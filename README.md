@@ -38,9 +38,9 @@ Dark by default and nothing girly, because that is what she asked for.
 
 | | |
 | --- | --- |
-| **Stationery** | Stickers of her character, pattern stickers, name labels, bookmarks, a diary cover and diary pages, a week planner, to-do lists, gift tags, door signs and letter paper |
+| **Stationery** | Five groups: stickers (of her character, or in her pattern), a diary (cover and pages), labels and gift tags, planners and to-do lists, bookmarks and door signs |
 | **Make from a box** | Measure a toilet roll, a cereal box or a lid, and print a wrap that fits it, with the steps to make a pencil pot, a desk tidy, a notebook cover or a treasure box |
-| **My brand** | Her own logo in four styles, business cards and logo stickers. The logo goes on her diary cover and letter paper too |
+| **My brand** | Her own logo in four styles, business cards and logo stickers. The logo goes on her diary cover too |
 | **Play** | A poster of her name, secret messages in pigpen with a key for a friend, story sparks for when the diary page is blank, and a doodle pad |
 | **My makes** | Photos of everything she made, kept on the device |
 | **Make it yours** | Her character, or a family's own (see below), her name, seven letterings, twelve colour sets and any colour besides, her favourite pattern and the background |

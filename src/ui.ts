@@ -83,6 +83,18 @@ export function wireChoice (root: HTMLElement, attr: string, pick: (value: strin
     b.addEventListener('click', () => pick(b.dataset[attr.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase())]!)));
 }
 
+/**
+ * Prefixes every id in an SVG, and every reference to one. Each sheet names
+ * its patterns p1 and p2; several on one page would all use whichever
+ * came first.
+ */
+export function scoped (svg: string, prefix: string): string {
+  return svg
+    .replace(/id="([^"]+)"/g, `id="${prefix}$1"`)
+    .replace(/url\(#([^)]+)\)/g, `url(#${prefix}$1)`)
+    .replace(/href="#([^"]+)"/g, `href="#${prefix}$1"`);
+}
+
 /* Colours ---------------------------------------------------------------- */
 
 /** The lettering row of the strip: each style, written in their name. */
@@ -131,12 +143,17 @@ export function wireColours (root: HTMLElement): void {
 
 /* Patterns --------------------------------------------------------------- */
 
+/**
+ * The patterns as large squares, each showing enough of the pattern to judge
+ * it, with its name under it. The chosen one has a ring and a tick.
+ */
 export function patternPicker (): string {
   const l = look();
-  return `<div class="chips chips--patterns" role="radiogroup" aria-label="Pattern">${PATTERNS.map((p) =>
-    `<button type="button" class="chip chip--pattern" role="radio" data-pattern="${p.id}" aria-checked="${p.id === l.pattern}">` +
-    `<svg viewBox="0 0 30 30" aria-hidden="true"><defs>${defs(`sw-${p.id}`, p.id, l, 0.9)}</defs>` +
-    `<rect width="30" height="30" rx="8" fill="url(#sw-${p.id})"/></svg><span>${p.label}</span></button>`).join('')}</div>`;
+  return `<div class="pats" role="radiogroup" aria-label="Pattern">${PATTERNS.map((p) =>
+    `<button type="button" class="pat" role="radio" data-pattern="${p.id}" aria-checked="${p.id === l.pattern}">` +
+    `<svg viewBox="0 0 60 60" aria-hidden="true"><defs>${defs(`sw-${p.id}`, p.id, l, 1.3)}</defs>` +
+    `<rect width="60" height="60" rx="12" fill="url(#sw-${p.id})"/></svg>` +
+    `<span class="pat-tick" aria-hidden="true">${ICONS.tick}</span><span class="pat-name">${p.label}</span></button>`).join('')}</div>`;
 }
 
 export function wirePatterns (root: HTMLElement): void {

@@ -3,7 +3,7 @@
  *
  * She asked for more branding on her diary. This is where the brand comes
  * from: a name, a line under it, a style, and her face or her initial. The
- * logo it makes goes on her diary cover, letter paper and business cards.
+ * logo it makes goes on her diary cover and business cards.
  */
 import { look, setLook, type LogoStyle } from '../look';
 import { logoSvg, LOGO_STYLES } from '../brand';
@@ -31,7 +31,7 @@ export function brandRoom (main: HTMLElement): void {
         <button type="button" class="chip" role="radio" data-middle="letter" aria-checked="${!b.me}">My initial</button>
       </div>
       ${b.me ? posePicker(b.pose ?? l.pose, false, 'logo-pose') : ''}
-      <p class="hint">Your logo goes on your diary cover, letter paper and business cards.</p>
+      <p class="hint">Your logo goes on your diary cover and your business cards.</p>
     </div>
   </section>`;
   bench(main, BRAND_KINDS, state, top);

@@ -281,8 +281,6 @@ img { display: block; max-width: 100%; }
 .chip:hover { border-color: color-mix(in srgb, var(--accent) 60%, transparent); }
 .chip:active { transform: scale(.95); }
 .chip[aria-checked="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
-.chip--pattern { padding: 4px 12px 4px 4px; }
-.chip--pattern svg { width: 30px; height: 30px; }
 
 .field { display: flex; flex-direction: column; gap: 6px; font-size: 15px; font-weight: 700; margin-top: 10px; }
 .field input, .field textarea {
@@ -356,9 +354,64 @@ img { display: block; max-width: 100%; }
 .preview > .go.print { margin-top: 0; }
 .print-status { text-align: center; }
 
+/* Patterns, as squares big enough to judge */
+.pats { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 10px; }
+.pat {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 6px 8px;
+  border: 3px solid transparent;
+  border-radius: 16px;
+  background: var(--card2);
+  font-size: 13px;
+  font-weight: 700;
+  transition: transform .15s, border-color .15s;
+}
+.pat svg { width: 100%; height: auto; border-radius: 12px; box-shadow: inset 0 0 0 1px var(--line); }
+.pat:hover { transform: translateY(-2px); }
+.pat[aria-checked="true"] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 18%, var(--card2)); }
+.pat-tick {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  display: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: 0 2px 6px rgb(0 0 0 / .35);
+}
+.pat-tick svg { width: 15px; height: 15px; box-shadow: none; }
+.pat[aria-checked="true"] .pat-tick { display: grid; }
+
+/* Choosing between the sheets in a group, by a picture of each */
+.sheet-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.sheet-option {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 10px 12px;
+  border: 3px solid transparent;
+  border-radius: 16px;
+  background: var(--card2);
+  text-align: left;
+  transition: border-color .15s, transform .15s;
+}
+.sheet-option:hover { transform: translateY(-2px); }
+.sheet-option[aria-checked="true"] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, var(--card2)); }
+.sheet-option .sheet-mini { margin-bottom: 6px; }
+.sheet-option .sheet-name { font-size: 16px; }
+.sheet-option .sheet-blurb { font-size: 13px; }
+.sheet-count { margin-top: 4px; font-size: 12px; font-weight: 800; letter-spacing: .03em; color: var(--accent); }
+
 /* Stationery: a tile for each sheet */
-/* Six to a row on a laptop, so eleven sheets do not leave one on its own. */
-.sheets-hub { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 26px 20px; }
+/* Five groups, five to a row on a laptop. */
+.sheets-hub { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 26px 20px; }
 .sheet-tile {
   display: flex;
   flex-direction: column;

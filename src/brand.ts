@@ -2,7 +2,7 @@
  * Jazz's logo, in four styles, drawn as SVG.
  *
  * The same drawing goes on the screen in My brand and onto every sheet that
- * carries her brand: diary covers, planners, letter paper, business cards.
+ * carries her brand: the diary cover, business cards and logo stickers.
  * `logo()` draws into a square box at (x, y) of the given size, in whatever
  * units the surrounding SVG uses (millimetres on sheets, pixels on screen).
  */

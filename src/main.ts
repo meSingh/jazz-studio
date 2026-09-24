@@ -18,7 +18,7 @@ import { stationeryRoom } from './rooms/stationery';
 import { boxRoom } from './rooms/box';
 import { brandRoom } from './rooms/brand';
 import { playRoom, PLAYTHINGS } from './rooms/play';
-import { KINDS } from './sheets';
+import { GROUPS } from './sheets';
 import { makesRoom } from './rooms/makes';
 import { yoursRoom } from './rooms/yours';
 import { install, installed } from './install';
@@ -49,9 +49,11 @@ function render (keepScroll = false): void {
   setKeepJazz(look().keepJazz);
   const name = look().name;
   // A page inside a room: a plaything, or one sheet of stationery.
-  const sheetPage = room === 'stationery' ? KINDS.find((k) => k.id === sub) : undefined;
+  const group = room === 'stationery'
+    ? GROUPS.find((g) => g.id === sub) ?? GROUPS.find((g) => g.kinds.some((k) => k.id === sub))
+    : undefined;
   const thing = room === 'play' ? PLAYTHINGS.find((t) => t.id === sub)
-    : sheetPage ? { title: sheetPage.label } : undefined;
+    : group ? { title: group.label } : undefined;
   document.title = room === 'home' ? `${name}'s Studio` : `${thing?.title ?? ROOMS[room].title} · ${name}'s Studio`;
   app.dataset.room = room;
   app.innerHTML = top(room, thing?.title) + '<main class="room"></main>';
