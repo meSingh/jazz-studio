@@ -29,6 +29,11 @@ export interface Cut {
   cx: number;
   cy: number;
   d: number;
+  /** How much of the picture turned out to be background, 0 to 1. */
+  cleared: number;
+  /** Where the trimmed cut-out sat in the whole picture, at the same scale. */
+  ox?: number;
+  oy?: number;
 }
 
 const EDGE = 900;
@@ -50,6 +55,9 @@ export async function cutOut (file: Blob): Promise<Cut> {
 
   if (!alreadyClear(px, w, h)) { key(px, w, h); tighten(px, w, h); }
   ctx.putImageData(img, 0, 0);
+  let clear = 0;
+  for (let i = 3; i < px.length; i += 4) if (px[i] < 24) clear++;
+  const cleared = clear / (w * h);
 
   // Trim to the character, with a little room.
   const box = bounds(px, w, h);
@@ -67,7 +75,29 @@ export async function cutOut (file: Blob): Promise<Cut> {
   const f = focus(out);
   const blob = await new Promise<Blob>((resolve, reject) =>
     out.toBlob((b) => (b ? resolve(b) : reject(new Error('Could not save the picture'))), 'image/png'));
-  return { blob, w: out.width, h: out.height, ...f };
+  return { blob, w: out.width, h: out.height, ...f, cleared, ox: x0, oy: y0 };
+}
+
+/**
+ * The picture kept whole, background and all: for a photo taken anywhere,
+ * where there is no plain background to take away. Only made smaller. The
+ * face is assumed to be in the middle, a little above centre, which is where
+ * people put it; they can move the circle if not.
+ */
+export async function photoOf (file: Blob): Promise<Cut> {
+  const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+  const scale = Math.min(1, EDGE / Math.max(bitmap.width, bitmap.height));
+  const w = Math.round(bitmap.width * scale);
+  const h = Math.round(bitmap.height * scale);
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  canvas.getContext('2d')!.drawImage(bitmap, 0, 0, w, h);
+  bitmap.close();
+  const blob = await new Promise<Blob>((resolve, reject) =>
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Could not save the picture'))), 'image/jpeg', 0.9));
+  const d = Math.min(w, h) * 0.62;
+  return { blob, w, h, cx: w / 2, cy: h * 0.42, d, cleared: 0 };
 }
 
 /** True when the edges are already see-through: a cut-out someone made elsewhere. */

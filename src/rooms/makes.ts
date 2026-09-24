@@ -1,7 +1,7 @@
 /** My makes: photos of finished things, and doodles, kept on this device. */
 import { all, save, remove, shrink, type Make } from '../makes';
 import { ICONS } from '../icons';
-import { esc, field, inSukhiPlay } from '../ui';
+import { esc, field, inSukhiPlay, confirmBox } from '../ui';
 
 const urls: string[] = [];
 
@@ -72,13 +72,18 @@ async function shelf (box: HTMLElement): Promise<void> {
       `<button type="button" class="quiet" data-remove="${m.id}">${ICONS.bin}<span>Remove</span></button></article>`;
   }).join('');
   box.querySelectorAll<HTMLButtonElement>('[data-remove]').forEach((b) => b.addEventListener('click', async () => {
-    // Two taps, so a photo is never lost to one slip of a finger.
-    if (b.dataset.sure !== 'yes') {
-      b.dataset.sure = 'yes';
-      b.querySelector('span')!.textContent = 'Tap again to remove';
-      return;
-    }
-    await remove(b.dataset.remove!);
+    const m = list.find((x) => x.id === b.dataset.remove);
+    if (!m) return;
+    const pic = b.closest('.made')?.querySelector<HTMLImageElement>('img.made-photo');
+    const yes = await confirmBox({
+      title: `Remove ${esc(m.title)}?`,
+      art: pic ? `<img class="ask-thumb" src="${pic.src}" alt="">` : undefined,
+      body: `<p>It comes off your shelf${m.photo ? ', photo and all' : ''}. The thing you made is not touched, only its place here.</p>
+        <p>This cannot be undone.</p>`,
+      yes: 'Remove'
+    });
+    if (!yes) return;
+    await remove(m.id);
     await shelf(box);
   }));
 }

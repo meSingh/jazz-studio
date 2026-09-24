@@ -85,8 +85,18 @@ export function wireChoice (root: HTMLElement, attr: string, pick: (value: strin
 
 /* Colours ---------------------------------------------------------------- */
 
-/** `sets` false leaves out the row of colour sets, for pages that show them bigger already. */
-export function colourBar (sets = true): string {
+/** The lettering row of the strip: each style, written in their name. */
+function lettersRow (l: ReturnType<typeof look>): string {
+  return `<div class="cb-row"><span class="cb-label">Letters</span><div class="cb-scroll">${(Object.keys(LETTERING) as Lettering[]).map((k) =>
+    `<button type="button" class="letters" data-lettering="${k}" aria-pressed="${k === l.lettering}" title="${LETTERING[k].label}" ` +
+    `style="font-family:${LETTERING[k].stack.replace(/"/g, "'")};font-weight:${LETTERING[k].weight}">${esc(l.name.slice(0, 8) || 'Aa')}</button>`).join('')}</div></div>`;
+}
+
+/**
+ * `sets` false leaves out the row of colour sets, and `letters` false the
+ * lettering row, for a page that shows them bigger already.
+ */
+export function colourBar (sets = true, letters = true): string {
   const l = look();
   const swatches = (key: 'accent' | 'accent2'): string =>
     PALETTE.map((c) => `<button type="button" class="swatch" data-${key}="${c}" style="--c:${c}" aria-label="${c}" aria-pressed="${l[key].toUpperCase() === c}"></button>`).join('') +
@@ -97,9 +107,7 @@ export function colourBar (sets = true): string {
       `<i style="background:${s.accent}"></i><i style="background:${s.accent2}"></i><span>${s.label}</span></button>`).join('')}</div></div>` : ''}
     <div class="cb-row"><span class="cb-label">Main</span><div class="cb-scroll">${swatches('accent')}</div></div>
     <div class="cb-row"><span class="cb-label">Second</span><div class="cb-scroll">${swatches('accent2')}</div></div>
-    <div class="cb-row"><span class="cb-label">Letters</span><div class="cb-scroll">${(Object.keys(LETTERING) as Lettering[]).map((k) =>
-      `<button type="button" class="letters" data-lettering="${k}" aria-pressed="${k === l.lettering}" title="${LETTERING[k].label}" ` +
-      `style="font-family:${LETTERING[k].stack.replace(/"/g, "'")};font-weight:${LETTERING[k].weight}">${esc(l.name.slice(0, 8) || 'Aa')}</button>`).join('')}</div></div>
+    ${letters ? lettersRow(l) : ''}
   </section>`;
 }
 
@@ -145,4 +153,43 @@ export function posePicker (current: PoseId | 'mix', mix: boolean, attr = 'pose'
     ? `<button type="button" class="pose pose--mix" role="radio" data-${attr}="mix" aria-checked="${current === 'mix'}">` +
       `<span class="mix-stack">${list.slice(0, 3).map((p) => faceImg(p.id, 'mix-face')).join('')}</span><span>All of me</span></button>`
     : ''}</div>`;
+}
+
+/* Asking first ------------------------------------------------------------ */
+
+/**
+ * A proper question before anything is removed: what it is, what will change,
+ * and two plain buttons. Resolves true only for the one that removes. Escape,
+ * a click outside and Cancel all mean no.
+ */
+export function confirmBox (o: { title: string; body: string; art?: string; yes: string; no?: string }): Promise<boolean> {
+  return new Promise((resolve) => {
+    document.querySelector('dialog.ask')?.remove();
+    const d = document.createElement('dialog');
+    d.className = 'ask';
+    d.setAttribute('aria-labelledby', 'ask-title');
+    d.innerHTML = `${o.art ? `<div class="ask-art">${o.art}</div>` : ''}
+      <h2 id="ask-title">${o.title}</h2>
+      <div class="ask-body">${o.body}</div>
+      <div class="ask-buttons">
+        <button type="button" class="go go--ghost ask-no">${o.no ?? 'Cancel'}</button>
+        <button type="button" class="go go--danger ask-yes">${o.yes}</button>
+      </div>`;
+    document.body.append(d);
+    let answered = false;
+    const done = (yes: boolean): void => {
+      if (answered) return;
+      answered = true;
+      d.close();
+      d.remove();
+      resolve(yes);
+    };
+    d.querySelector('.ask-no')!.addEventListener('click', () => done(false));
+    d.querySelector('.ask-yes')!.addEventListener('click', () => done(true));
+    d.addEventListener('cancel', () => done(false));
+    d.addEventListener('click', (e) => { if (e.target === d) done(false); });
+    d.showModal();
+    // Cancel has the focus, so an accidental Enter keeps things.
+    d.querySelector<HTMLButtonElement>('.ask-no')!.focus();
+  });
 }

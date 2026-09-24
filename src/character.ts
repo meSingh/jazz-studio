@@ -32,6 +32,8 @@ export interface Pose {
   cy: number;
   d: number;
   own?: boolean;
+  /** A photo kept whole, background and all, rather than a cut-out. */
+  photo?: boolean;
 }
 
 export const JAZZ: Pose[] = [
@@ -54,6 +56,7 @@ export interface Stored {
   cy: number;
   d: number;
   added: number;
+  photo?: boolean;
 }
 
 let own: Pose[] = [];
@@ -68,7 +71,7 @@ export async function loadOwn (): Promise<void> {
   own = list.sort((a, b) => a.added - b.added).map((c) => {
     const url = URL.createObjectURL(c.blob);
     blobUrls.push(url);
-    return { id: c.id, label: c.label, url, w: c.w, h: c.h, cx: c.cx, cy: c.cy, d: c.d, own: true };
+    return { id: c.id, label: c.label, url, w: c.w, h: c.h, cx: c.cx, cy: c.cy, d: c.d, own: true, photo: c.photo === true };
   });
 }
 
@@ -76,9 +79,10 @@ export const saveOwn = async (c: Stored): Promise<void> => { await run('readwrit
 export const removeOwn = async (id: string): Promise<void> => { await run('readwrite', (s) => s.delete(id), CHARACTERS); await loadOwn(); };
 
 /** Moves or resizes the circle a family's character is framed in. */
-export async function nudgeOwn (id: string, change: { dy?: number; zoom?: number }): Promise<void> {
+export async function nudgeOwn (id: string, change: { dx?: number; dy?: number; zoom?: number }): Promise<void> {
   const c = await run('readonly', (s) => s.get(id) as IDBRequest<Stored | undefined>, CHARACTERS);
   if (!c) return;
+  if (change.dx) c.cx += change.dx * c.d;
   if (change.dy) c.cy += change.dy * c.d;
   if (change.zoom) c.d = Math.max(40, c.d * change.zoom);
   await saveOwn(c);
@@ -124,20 +128,32 @@ export function face (id: PoseId, x: number, y: number, r: number, clip: string,
     `width="${+(p.w * k).toFixed(2)}" height="${+(p.h * k).toFixed(2)}" clip-path="url(#${clip})" preserveAspectRatio="none"/>`;
 }
 
-/** The whole pose, standing on a line, fitted into a box. */
+let figures = 0;
+
+/**
+ * The whole pose, standing on a line, fitted into a box. A photo has its own
+ * background, so it goes in a frame with rounded corners instead of standing
+ * on the page.
+ */
 export function figure (id: PoseId, x: number, y: number, w: number, h: number): string {
   const p = pose(id);
   const k = Math.min(w / p.w, h / p.h);
   const fw = p.w * k;
   const fh = p.h * k;
-  return `<image href="${p.url}" x="${+(x + (w - fw) / 2).toFixed(2)}" y="${+(y + h - fh).toFixed(2)}" ` +
-    `width="${+fw.toFixed(2)}" height="${+fh.toFixed(2)}" preserveAspectRatio="none"/>`;
+  const fx = +(x + (w - fw) / 2).toFixed(2);
+  const fy = +(y + h - fh).toFixed(2);
+  const image = `<image href="${p.url}" x="${fx}" y="${fy}" width="${+fw.toFixed(2)}" height="${+fh.toFixed(2)}" preserveAspectRatio="none"`;
+  if (!p.photo) return `${image}/>`;
+  const clip = `fig${++figures}`;
+  const r = Math.min(fw, fh) * 0.08;
+  return `<clipPath id="${clip}"><rect x="${fx}" y="${fy}" width="${+fw.toFixed(2)}" height="${+fh.toFixed(2)}" rx="${+r.toFixed(2)}"/></clipPath>` +
+    `${image} clip-path="url(#${clip})"/>`;
 }
 
 /** For the screens: an <img> of a pose. */
 export function img (id: PoseId, cls = ''): string {
   const p = pose(id);
-  return `<img class="${cls}" src="${p.url}" width="${p.w}" height="${p.h}" alt="" draggable="false">`;
+  return `<img class="${cls}${p.photo ? ' is-photo' : ''}" src="${p.url}" width="${p.w}" height="${p.h}" alt="" draggable="false">`;
 }
 
 /**
