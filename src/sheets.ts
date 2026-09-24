@@ -2,8 +2,8 @@
  * Printable sheets, drawn in millimetres.
  *
  * Every sheet is an SVG whose viewBox is an A4 page, 210 by 297, so one unit
- * is one millimetre on paper, as long as it is printed at actual size. Most
- * sheets carry a 5 cm check line so that can be tested with a ruler. Nothing
+ * is one millimetre on paper, as long as it is printed at actual size. Box
+ * wraps, where that matters, carry a 5 cm line to test it with a ruler. Nothing
  * important is closer than 10 mm to the edge, inside what home printers reach.
  *
  * Her character, her logo, her pattern and her colours go on as much of it as
@@ -108,7 +108,13 @@ function hexagon (cx: number, cy: number, r: number): string {
 const poseAt = (o: Options, i: number): PoseId =>
   o.pose === 'mix' ? poses()[i % poses().length].id : o.pose;
 
-/** A line that should measure exactly 5 cm, so a ruler can tell whether the printer shrank the page. */
+/**
+ * A line that should measure exactly 5 cm, so a ruler can tell whether the
+ * printer shrank the page. Only on box wraps, where the size is the point: a
+ * wrap has to go round a real roll. Stickers and planners are fine a little
+ * smaller, and on an iPad, which always prints a little smaller, the line
+ * only said something was wrong when nothing was.
+ */
 export function check (ink: string): string {
   return `<g opacity=".5"><path d="M15 290 H65 M15 288 V292 M65 288 V292" stroke="${ink}" stroke-width=".35"/>` +
     `<text x="68" y="291.3" font-size="2.8" fill="${ink}" font-family="system-ui, sans-serif">This line should measure 5 cm. If it does not, print at actual size.</text></g>`;
@@ -169,7 +175,7 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
           }
         }
       }
-      return page(pat(0.9), body + check(ink), 'Pattern stickers', font);
+      return page(pat(0.9), body, 'Pattern stickers', font);
     }
 
     case 'faces': {
@@ -191,7 +197,7 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
           body += `<circle cx="${cx}" cy="${cy}" r="22.5" ${CUT} stroke="${ink}" opacity=".35"/>`;
         }
       }
-      return page(pat(0.8), body + check(ink), 'Me stickers', font);
+      return page(pat(0.8), body, 'Me stickers', font);
     }
 
     case 'bookmarks': {
@@ -209,7 +215,7 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
           : `<circle cx="${x + 20}" cy="${y + 14}" r="3" fill="#fff" stroke="${ink}" stroke-width=".4"/>`;
         body += `<rect x="${x - 1.5}" y="${y - 1.5}" width="43" height="199" rx="5" ${CUT} stroke="${ink}" opacity=".35"/>`;
       }
-      return page(pat(0.7), body + check(ink), 'Bookmarks', font);
+      return page(pat(0.7), body, 'Bookmarks', font);
     }
 
     case 'labels': {
@@ -229,7 +235,7 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
             `<rect x="${x - 1.5}" y="${y - 1.5}" width="88" height="34" rx="6" ${CUT} stroke="${ink}" opacity=".35"/>`;
         }
       }
-      return page(pat(0.5), body + check(ink), 'Name labels', font);
+      return page(pat(0.5), body, 'Name labels', font);
     }
 
     case 'cover': {
@@ -290,7 +296,7 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
           `<text x="${x + 5}" y="${y + 7}" font-size="5" font-weight="800" fill="${on(c)}">${d}</text>`;
         for (let l = 0; l < 4; l++) body += `<path d="M${x + 5} ${y + 20 + l * 9} H${x + 82}" stroke="${ink}" stroke-width=".3" opacity=".35"/>`;
       });
-      return page(pat(0.8), body + check(ink), 'Week planner', font);
+      return page(pat(0.8), body, 'Week planner', font);
     }
 
     case 'todo': {
@@ -311,7 +317,7 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
             `<path d="M33 ${y + 0.8} H186" stroke="${ink}" stroke-width=".3" opacity=".35"/>`;
         }
       }
-      return page(pat(0.7), body + check(ink), 'To-do lists', font);
+      return page(pat(0.7), body, 'To-do lists', font);
     }
 
     case 'tags': {
@@ -331,7 +337,7 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
           `<text x="${x + 40}" y="${y + 50}" font-size="${fit(from, 40, 8)}" font-weight="900" fill="${ink}">${esc(from)}</text>` +
           `<path d="M${x + 12} ${y - 1.5} H${x + 86.5} V${y + 61.5} H${x + 12} L${x - 1.5} ${y + 48.5} V${y + 11.5}Z" ${CUT} stroke="${ink}" opacity=".3"/>`;
       }
-      return page(pat(0.6), body + check(ink), 'Gift tags', font);
+      return page(pat(0.6), body, 'Gift tags', font);
     }
 
     case 'door': {
@@ -379,7 +385,7 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
         const y = 16 + Math.floor(i / 3) * 66;
         body += logo(look, x, y, 52) + `<rect x="${x - 3}" y="${y - 3}" width="58" height="58" rx="10" ${CUT} stroke="${ink}" opacity=".3"/>`;
       }
-      return page('', body + check(ink), 'Logo stickers', font);
+      return page('', body, 'Logo stickers', font);
     }
   }
 }

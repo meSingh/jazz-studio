@@ -1248,7 +1248,19 @@ dialog.how { width: min(560px, calc(100vw - 32px)); }
 
 @page { size: A4 portrait; margin: 0; }
 
-.print-sheet { display: none; }
+/* Drawn but out of sight, so its pictures have loaded before anything is
+   printed (see keepCopy in ui.ts); display: none would leave them unloaded. */
+.print-sheet {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+.print-sheet svg { width: 210mm; }
 
 @media print {
   /* Only the copy of the sheet (see readyToPrint in ui.ts), at the top of the
@@ -1256,9 +1268,22 @@ dialog.how { width: min(560px, calc(100vw - 32px)); }
      can push it down the page. */
   html, body { background: #fff !important; margin: 0 !important; padding: 0 !important; }
   body > :not(.print-sheet) { display: none !important; }
-  .print-sheet { display: block; break-inside: avoid; page-break-inside: avoid; }
+  .print-sheet {
+    position: static;
+    display: block;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    opacity: 1;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
   /* The width of the page, not 210mm: where the margins are honoured that is
      the whole A4, and where a printer keeps its own it is a little smaller and
      still on one page. An A4-shaped sheet that fits across fits down. */
   .print-sheet svg { display: block; width: 100%; height: auto; max-width: none; max-height: 100vh; }
+  /* On an iPad a vh is the screen's, not the page's, so the cap above made the
+     sheet change size as she turned it round. A fixed share of the width
+     instead (see ui.ts). */
+  .ipad-print .print-sheet svg { width: 90%; max-height: none; margin: 0 auto; }
 }

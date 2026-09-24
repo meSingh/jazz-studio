@@ -88,21 +88,51 @@ export function wirePrint (root: HTMLElement): void {
  * and the top of the next. On its own at the top of the page, and sized to
  * the page rather than to 210mm, it is one sheet whatever margins the printer
  * keeps. Its ids are renamed so the copy's patterns never point at the
- * screen's. Also run for the browser's own Print menu.
+ * screen's.
+ *
+ * The copy is kept up to date as the sheet changes, not made when Print is
+ * pressed. Made then, its pictures were still loading when Safari was asked
+ * to print; Safari waits for a page to finish loading before it prints, and
+ * a print that starts after the tap is one it treats as the page printing by
+ * itself, so it asked "Allow?" every time.
  */
-export function readyToPrint (): void {
+function keepCopy (): void {
   const area = document.querySelector('.print-area');
-  if (!area) return;
   let copy = document.querySelector<HTMLElement>('body > .print-sheet');
+  if (!area) { copy?.remove(); return; }
   if (!copy) {
     copy = document.createElement('div');
     copy.className = 'print-sheet';
     copy.setAttribute('aria-hidden', 'true');
     document.body.append(copy);
   }
-  copy.innerHTML = scoped(area.innerHTML, 'pr-');
+  const html = area.innerHTML;
+  if (copy.dataset.of === html) return;
+  copy.dataset.of = html;
+  copy.innerHTML = scoped(html, 'pr-');
 }
-window.addEventListener('beforeprint', readyToPrint);
+
+/** Makes sure the copy is the sheet on the screen; nothing to do if it already is. */
+export const readyToPrint = keepCopy;
+
+let pending = 0;
+new MutationObserver(() => {
+  // Once a frame at most: typing on a sheet changes it at every key.
+  if (pending) return;
+  pending = requestAnimationFrame(() => { pending = 0; keepCopy(); });
+}).observe(document.documentElement, { childList: true, subtree: true, characterData: true });
+window.addEventListener('beforeprint', keepCopy);
+
+/*
+ * An iPad lays a page out at the width of its screen and shrinks that to the
+ * paper, so a millimetre there is not a millimetre, and its header and footer
+ * take more of the page top and bottom than at the sides. Sized to the width
+ * of the page, the sheet was a few millimetres too tall. There it is printed a
+ * little narrower, which keeps it on one page in either orientation.
+ */
+if (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
+  document.documentElement.classList.add('ipad-print');
+}
 
 /** Buttons that behave as one choice, as radio buttons do. */
 export function wireChoice (root: HTMLElement, attr: string, pick: (value: string) => void): void {
