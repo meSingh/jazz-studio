@@ -1417,8 +1417,9 @@ dialog.how { width: min(560px, calc(100vw - 32px)); }
   display: flex; align-items: center; gap: 10px; margin: 16px 0 0; padding: 10px 12px;
   border-radius: 14px; background: color-mix(in srgb, var(--accent) 12%, var(--card2)); font-size: 14.5px;
 }
-.brand-note .face-crop { width: 36px; flex: none; }
-.brand-note a { color: var(--accent); font-weight: 800; }
+.brand-note .face-crop { width: 40px; flex: none; }
+.brand-note p { margin: 0 0 8px; }
+.brand-note-go { display: inline-block; text-decoration: none; }
 
 /* Whose brand, in My brand */
 .chip--who { display: inline-flex; align-items: center; gap: 6px; padding-left: 4px; }

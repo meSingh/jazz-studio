@@ -10,7 +10,7 @@
  * lettering and pattern. Those live here, in the tool, and change only that
  * sheet; a sheet with none of its own follows the studio's look.
  */
-import { sheet, firstOf, type Kind, type KindInfo, type Options, type Who } from '../sheets';
+import { sheet, firstOf, fieldContext, type Kind, type KindInfo, type Options, type Who } from '../sheets';
 import { poses, pose as poseOf, personOf, nameFor, faceImg, brandFor, brandKeyFor } from '../character';
 import { look } from '../look';
 import type { PoseId } from '../character';
@@ -100,13 +100,16 @@ export function bench (main: HTMLElement, kinds: KindInfo[], state: Bench, tool:
       ${heading('Pattern')}
       ${patternPicker(design)}
       ${kind.words && !(kind.alone && withPeople) ? heading('Words') + field(kind.words, `<input class="words" maxlength="40" placeholder="${esc(kind.start(l))}" value="${esc(s.words[kind.id] ?? '')}">`) : ''}
-      ${kind.fields ? kind.fields.map((f) => {
-        const v = s.extra?.[kind.id]?.[f.key] ?? f.start(l, brandKey ? nameFor(brandFor(brandKey).pose ?? l.pose, l) : undefined);
-        return f.tick
-          ? `<label class="tick"><input type="checkbox" data-extra="${f.key}" ${v === '1' ? 'checked' : ''}><span>${esc(f.label)}</span></label>`
-          : field(f.label, `<input data-extra="${f.key}" maxlength="40" value="${esc(v)}">`);
+      ${kind.fields ? kind.fields.filter((f) => !(f.alone && withPeople)).map((f) => {
+        const v = s.extra?.[kind.id]?.[f.key] ?? f.start(l, fieldContext(kind.id, opts(), l));
+        if (f.tick) return `<label class="tick"><input type="checkbox" data-extra="${f.key}" ${v === '1' ? 'checked' : ''}><span>${esc(f.label)}</span></label>`;
+        if (f.options) {
+          return heading(f.label) + `<div class="chips" role="radiogroup" aria-label="${esc(f.label)}">${f.options.map((opt) =>
+            `<button type="button" class="chip" role="radio" data-extra-opt="${f.key}" data-val="${opt}" aria-checked="${opt === v}">${opt}</button>`).join('')}</div>`;
+        }
+        return field(f.label, `<input data-extra="${f.key}" maxlength="40" value="${esc(v)}">`);
       }).join('') : ''}
-      ${kind.id === 'cover' || kind.id === 'diary' ? brandNote(firstOf(s.pose, l)) : ''}
+      ${kind.id === 'cover' || kind.id === 'diary' ? brandNote(kind.id, s.me || kind.pose ? firstOf(s.pose, l) : l.pose) : ''}
     </section>
     <section class="preview">
       ${colourBar(design)}
@@ -144,6 +147,11 @@ export function bench (main: HTMLElement, kinds: KindInfo[], state: Bench, tool:
     // A tick can bring words in or take them away, so the whole page.
     if (input.type === 'checkbox') refresh(); else redraw();
   }));
+  main.querySelectorAll<HTMLButtonElement>('[data-extra-opt]').forEach((b) => b.addEventListener('click', () => {
+    const now = state.get();
+    state.set({ extra: { ...now.extra, [kind.id]: { ...now.extra?.[kind.id], [b.dataset.extraOpt!]: b.dataset.val! } } });
+    refresh();
+  }));
   wirePrint(main);
   showing(() => {
     const now = state.get();
@@ -174,18 +182,23 @@ function namesList (kind: KindInfo, s: BenchState): string {
     const mine = p.key === 'me' || (!!l.name.trim() && p.name === l.name.trim());
     const value = s.names?.[kind.id]?.[p.key] ?? named.start(p.name, mine);
     return `<label class="name-row"><span class="name-faces">${p.ids.slice(0, 3).map((id) => faceImg(id, 'name-face')).join('')}</span>` +
-      `<input data-name-of="${p.key}" maxlength="30" value="${esc(value)}" placeholder="${esc(mine && kind.id === 'tags' ? 'Left to write in' : p.name || 'Name')}" aria-label="${esc(named.label)}: ${esc(p.name || 'you')}"></label>`;
+      `<input data-name-of="${p.key}" maxlength="30" value="${esc(value)}" placeholder="${esc(kind.id === 'tags' ? 'Leave empty to write it in' : p.name || 'Name')}" aria-label="${esc(named.label)}: ${esc(p.name || 'you')}"></label>`;
   }).join('');
   return heading(named.label) +
     (named.optional ? `<label class="tick"><input type="checkbox" data-extra="names" ${on ? 'checked' : ''}><span>${esc(named.optional)}</span></label>` : '') +
     (on ? `<div class="name-rows">${rows}</div>` : '');
 }
 
-/** Which brand a diary carries, and where to change it. */
-function brandNote (id: string): string {
+/**
+ * Where a diary's brand comes from, in words a child reads once and gets:
+ * what on the page is the brand, whose it is, and a button to change it.
+ */
+function brandNote (kind: Kind, id: string): string {
   const key = brandKeyFor(id);
   const b = brandFor(key);
-  const who = nameFor(id, look()) || 'your';
-  return `<p class="brand-note">${faceImg(id, 'brand-note-face')}<span>This uses ${esc(who === 'your' ? 'your' : `${who}'s`)} brand, <b>${esc(b.name)}</b>. ` +
-    `To change it, <a href="#/brand/${encodeURIComponent(key)}">go to My brand</a>.</span></p>`;
+  const who = nameFor(id, look());
+  const whose = who ? `${who}'s` : 'your';
+  const what = kind === 'cover' ? 'The badge on this cover' : 'The name at the bottom of this page';
+  return `<div class="brand-note">${faceImg(id, 'brand-note-face')}<div><p>${what} is ${esc(whose)} brand: <b>${esc(b.name)}</b>.</p>` +
+    `<a class="chip brand-note-go" href="#/brand/${encodeURIComponent(key)}">Change ${esc(whose)} brand</a></div></div>`;
 }
