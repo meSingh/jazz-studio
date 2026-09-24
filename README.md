@@ -42,25 +42,34 @@ Dark by default and nothing girly, because that is what she asked for.
 | **Make from a box** | Measure a toilet roll, a cereal box or a lid, and print a wrap that fits it, with the steps to make a pencil pot, a desk tidy, a notebook cover or a treasure box |
 | **My brand** | Her own logo in four styles, business cards and logo stickers. The logo goes on her diary cover too |
 | **Play** | A poster of her name, secret messages in pigpen with a key for a friend, story sparks for when the diary page is blank, and a doodle pad |
-| **My makes** | Photos of everything she made, kept on the device |
+| **My makes** | Her prints, kept to print again or change first, and photos of everything she made, all on the device |
 | **Make it yours** | Her character, or a family's own (see below), her name, seven letterings, twelve colour sets and any colour besides, her favourite pattern and the background |
 
 The colours are on a strip above the preview in every tool, so a colour is
-tried where it shows rather than in another room.
+tried where it shows rather than in another room. Each sheet keeps its own, so
+trying a colour on a bookmark changes the bookmark and nothing else.
+
+After a print the studio asks whether to keep it in My makes, and what to call
+it. It keeps the settings rather than a picture: open it later and the tool is
+back exactly as it was, ready to print again or to change a word first.
 
 <div align="center">
 <img src="media/stickers.png" width="420" alt="The stationery room making a sheet of stickers of her character in six poses">
 <img src="media/box.png" width="420" alt="Make from a box, with a drawing of a toilet roll showing what to measure and a printed wrap with her face and the word Pens">
 <img src="media/brand.png" width="420" alt="My brand, with a round badge logo reading Jazz Studio around her face, and business cards">
+<img src="media/prints.png" width="420" alt="My makes, with her kept prints: bookmarks, stickers, a pencil pot wrap, a name poster and a secret message, each with an Open button">
 <img src="media/phone.png" width="200" alt="The studio on a phone">
 </div>
 
 ## Printing
 
-Every sheet is drawn in millimetres on A4. Print at **actual size** (100%, not
-"fit to page"): most sheets carry a line that should measure exactly 5 cm, so
-a ruler can check, and a wrap for a toilet roll comes out the right size to go
-round one. Nothing is closer than 10 mm to the edge.
+Every sheet is drawn in millimetres on A4, and prints on one page, on a
+computer, a tablet or a phone. Print wraps at **actual size** (100%, not
+"fit to page"), so a wrap for a toilet roll comes out the right size to go
+round one; each wrap carries a line that should measure exactly 5 cm, so a
+ruler can check. Nothing is closer than 10 mm to the edge. An iPad always
+prints a little smaller than actual size, and its own header and footer, so a
+sheet is fitted to what it leaves.
 
 ## Safe for her
 
@@ -69,8 +78,8 @@ round one. Nothing is closer than 10 mm to the edge.
   drawn or shipped with the app.
 - **Works offline.** Once it has been opened, it keeps working with no
   connection.
-- **Her things stay hers.** Photos and doodles are kept in the browser on this
-  device, and removing one takes two taps.
+- **Her things stay hers.** Prints, photos and doodles are kept in the browser
+  on this device, and removing one takes two taps.
 
 ## Her character
 
