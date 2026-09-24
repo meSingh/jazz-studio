@@ -47,16 +47,30 @@ body {
   isolation: isolate;
 }
 
-/* The backdrop layer, behind everything. */
-body::before {
-  content: "";
+/* The background, drawn to fit the window by backdrops.ts. */
+.backdrop-layer {
   position: fixed;
   inset: 0;
+  width: 100%;
+  height: 100%;
   z-index: -1;
   pointer-events: none;
 }
-/* The picture comes from backdrops.ts, drawn in their colours. */
-body::before { background-image: var(--backdrop-img, none); background-size: 240px 240px; }
+.backdrop-layer .tw { animation: twinkle 4s ease-in-out infinite alternate; }
+.backdrop-layer .tw:nth-child(3n) { animation-duration: 6s; animation-delay: -2s; }
+.backdrop-layer .tw:nth-child(5n) { animation-duration: 5s; animation-delay: -3s; }
+.backdrop-layer .drift { animation: drift 28s ease-in-out infinite alternate; }
+.backdrop-layer .d1 { animation-duration: 36s; animation-direction: alternate-reverse; }
+.backdrop-layer .d2 { animation-duration: 44s; }
+.backdrop-layer .flow { animation: flow 30s ease-in-out infinite alternate; }
+.backdrop-layer .f1 { animation-duration: 40s; animation-direction: alternate-reverse; }
+.backdrop-layer .bob { animation: bob-y 5s ease-in-out infinite alternate; }
+.backdrop-layer .b1 { animation-duration: 7s; animation-delay: -2s; }
+.backdrop-layer .b2 { animation-duration: 9s; animation-delay: -4s; }
+@keyframes twinkle { from { opacity: .15; } to { opacity: .9; } }
+@keyframes drift { from { transform: translate(0, 0); } to { transform: translate(60px, -40px); } }
+@keyframes flow { from { transform: translateX(0); } to { transform: translateX(-240px); } }
+@keyframes bob-y { from { transform: translateY(0); } to { transform: translateY(-10px); } }
 
 button, input, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; }
@@ -852,13 +866,13 @@ dialog.ask h2 { margin: 10px 0 8px; font-size: 22px; font-weight: var(--heavy); 
   font-size: 14px;
 }
 .backdrop[aria-checked="true"] { border-color: var(--accent); }
+.backdrop-view svg { width: 100%; height: 100%; display: block; }
 .backdrop-view {
   width: 100%;
   aspect-ratio: 16 / 10;
   border-radius: 12px;
+  overflow: hidden;
   background-color: var(--paper);
-  /* Half size, so a small tile shows enough of the pattern to judge it. */
-  background-size: 110px 110px;
   box-shadow: inset 0 0 0 1px var(--line);
 }
 
@@ -1088,7 +1102,7 @@ dialog.how { width: min(560px, calc(100vw - 32px)); }
   /* The rest of the page is hidden but still takes up room, and a tall room
      would print a blank second page; clip the printout to the one sheet. */
   html, body { background: #fff !important; height: 297mm !important; overflow: hidden !important; }
-  body::before { display: none; }
+  .backdrop-layer { display: none; }
   /* Anything wider than the paper makes the browser shrink the sheet, so the
      colour strip, whose rows are wide on purpose, is taken out entirely. */
   .colourbar { display: none !important; }

@@ -17,7 +17,7 @@ import { look, setLook, useScheme, reset, SCHEMES, LETTERING, BACKDROPS, type Ba
 import { ICONS } from '../icons';
 import { esc, heading, colourBar, wireColours, wireChoice, refresh, confirmBox } from '../ui';
 import { characterTab, wireCharacterTab } from './characters';
-import { backdropSvg } from '../backdrops';
+import { backdropPreview } from '../backdrops';
 
 export const TABS = [
   { id: 'character', label: 'Character and name' },
@@ -71,7 +71,7 @@ function lookTab (main: HTMLElement, nav: string): void {
       <p class="hint">What is behind everything in the studio.</p>
       <div class="backdrops" role="radiogroup" aria-label="Background">${BACKDROPS.map((b) =>
         `<button type="button" class="backdrop" role="radio" data-backdrop="${b.id}" aria-checked="${b.id === l.backdrop}">` +
-        `<span class="backdrop-view" style='background-image:${backdropSvg(b.id, l)}'></span><span>${b.label}</span></button>`).join('')}</div>
+        `<span class="backdrop-view">${backdropPreview(b.id, l)}</span><span>${b.label}</span></button>`).join('')}</div>
     </section>
   </div>`;
 

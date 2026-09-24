@@ -12,10 +12,10 @@
  */
 import type { PatternName } from './patterns';
 import type { PoseId } from './character';
-import { backdropSvg } from './backdrops';
+import { showBackdrop } from './backdrops';
 
 export type Lettering = 'rounded' | 'block' | 'marker' | 'hand' | 'typewriter' | 'mono' | 'classic';
-export type Backdrop = 'plain' | 'stars' | 'confetti' | 'bubbles' | 'squiggles';
+export type Backdrop = 'plain' | 'stars' | 'glow' | 'waves' | 'bubbles';
 export type LogoStyle = 'badge' | 'stamp' | 'ribbon' | 'monogram';
 
 export interface Brand {
@@ -95,9 +95,9 @@ export const LETTERING: Record<Lettering, { label: string; stack: string; weight
 export const BACKDROPS: Array<{ id: Backdrop; label: string }> = [
   { id: 'plain', label: 'Plain' },
   { id: 'stars', label: 'Stars' },
-  { id: 'confetti', label: 'Confetti' },
-  { id: 'bubbles', label: 'Bubbles' },
-  { id: 'squiggles', label: 'Squiggles' }
+  { id: 'glow', label: 'Glow' },
+  { id: 'waves', label: 'Waves' },
+  { id: 'bubbles', label: 'Bubbles' }
 ];
 
 const KEY = 'jazz-studio-look';
@@ -127,7 +127,7 @@ function load (): Look {
       const merged = { ...base, ...saved, brand: { ...base.brand, ...(saved.brand ?? {}) } };
       // A lettering from an older version that no longer exists falls back.
       if (!(merged.lettering in LETTERING)) merged.lettering = base.lettering;
-      // Grid paper and Dots were replaced; anyone who had them gets stars.
+      // A background that has since been replaced falls back to stars.
       if (!BACKDROPS.some((b) => b.id === merged.backdrop)) merged.backdrop = base.backdrop;
       return merged;
     }
@@ -172,7 +172,7 @@ export function apply (): void {
   r.setProperty('--on-accent2', light(current.accent2) > 0.6 ? '#111111' : '#FFFFFF');
   document.documentElement.dataset.dark = dark ? 'yes' : 'no';
   document.documentElement.dataset.backdrop = current.backdrop;
-  r.setProperty('--backdrop-img', backdropSvg(current.backdrop, current));
+  showBackdrop(current.backdrop, current);
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', current.paper);
 }
 
