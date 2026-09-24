@@ -42,7 +42,10 @@ def matte_tool():
 def main():
     sheet = Image.open(sys.argv[1]).convert('RGB')
     k = sheet.width / 922
-    boxes = {name: (COLS[c][0] + 5, ROWS[r][0] + 5, COLS[c][1] - 5, ROWS[r][1] - 5) for name, (r, c) in TILES.items()}
+    # In from the sides and bottom, where the tile's own edge is; but from a little
+    # above the top, because the top of his bun nearly touches it, and an inset
+    # there took the tip off it.
+    boxes = {name: (COLS[c][0] + 5, ROWS[r][0] - 3, COLS[c][1] - 5, ROWS[r][1] - 5) for name, (r, c) in TILES.items()}
     boxes['painting'] = PAINTING
     work = tempfile.mkdtemp()
     paths = []

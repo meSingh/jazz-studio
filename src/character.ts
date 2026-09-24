@@ -7,9 +7,10 @@
  * the browser (see cutout.ts) and kept in IndexedDB on this device.
  *
  * Every character belongs to a person, who has a name: Jazz, Sukhi, or the
- * name a family's own was given, which is how a friend comes in. The person
- * whose character is "yours" goes by your name instead. A sheet with several
- * people on it puts each one's name with their face (see nameFor).
+ * name a family's own was given, which is how a friend comes in; one with no
+ * name is theirs, and goes by their name. Jazz is always Jazz: picking one of
+ * hers as yours does not make her you. A sheet with several people on it puts
+ * each one's name with their face (see nameFor).
  *
  * Which are in the list: a family's own, and Jazz's and Sukhi's where they are
  * switched on in Make it yours (Look.sets). Never none: with nothing else,
@@ -70,12 +71,12 @@ export const JAZZ: Pose[] = [
  * like hers. Six expressions, head and shoulders, and one of him painting.
  */
 export const SUKHI: Pose[] = [
-  { id: 'sukhi-smiling', label: 'Smiling', url: sSmiling, w: 491, h: 604, cx: 246, cy: 242, d: 483 },
-  { id: 'sukhi-grin', label: 'Big grin', url: sGrin, w: 496, h: 604, cx: 248, cy: 242, d: 483 },
-  { id: 'sukhi-laughing', label: 'Laughing', url: sLaughing, w: 496, h: 604, cx: 248, cy: 242, d: 483 },
-  { id: 'sukhi-silly', label: 'Silly', url: sSilly, w: 472, h: 608, cx: 235, cy: 243, d: 486 },
-  { id: 'sukhi-thinking', label: 'Thinking', url: sThinking, w: 455, h: 604, cx: 228, cy: 242, d: 483 },
-  { id: 'sukhi-proud', label: 'Proud', url: sProud, w: 459, h: 604, cx: 228, cy: 242, d: 483 },
+  { id: 'sukhi-smiling', label: 'Smiling', url: sSmiling, w: 491, h: 611, cx: 246, cy: 251, d: 525 },
+  { id: 'sukhi-grin', label: 'Big grin', url: sGrin, w: 496, h: 611, cx: 248, cy: 251, d: 525 },
+  { id: 'sukhi-laughing', label: 'Laughing', url: sLaughing, w: 496, h: 611, cx: 248, cy: 251, d: 525 },
+  { id: 'sukhi-silly', label: 'Silly', url: sSilly, w: 472, h: 613, cx: 235, cy: 251, d: 527 },
+  { id: 'sukhi-thinking', label: 'Thinking', url: sThinking, w: 455, h: 606, cx: 228, cy: 248, d: 521 },
+  { id: 'sukhi-proud', label: 'Proud', url: sProud, w: 459, h: 607, cx: 228, cy: 249, d: 522 },
   { id: 'sukhi-painting', label: 'Painting', url: sPainting, w: 632, h: 848, cx: 337, cy: 198, d: 405 }
 ].map((p) => ({ ...p, who: 'Sukhi' as const }));
 
@@ -169,19 +170,23 @@ const unnamed = (label: string): boolean => {
 /** Which person a character belongs to. */
 export function personOf (p: Pose): string {
   if (p.who) return p.who.toLowerCase();
-  return unnamed(p.label) ? 'me' : `own:${p.label.trim().toLowerCase()}`;
+  if (!unnamed(p.label)) return `own:${p.label.trim().toLowerCase()}`;
+  // Theirs. Someone whose name is Jazz (on Jazz's own iPad) is Jazz, so what
+  // she adds goes with her ready-made ones rather than making a second Jazz.
+  const me = look().name.trim().toLowerCase();
+  return me === 'jazz' || me === 'sukhi' ? me : 'me';
 }
 
 /**
- * The name to put with a character on a sheet. The person whose character is
- * "yours" goes by your name (which may be empty, if you did not give one);
- * anyone else by theirs.
+ * The name to put with a character on a sheet: the person it belongs to.
+ * Jazz's are Jazz and Sukhi's are Sukhi, whoever picked them as their own. A
+ * family's goes by the name it was given, or theirs if it has none, so it
+ * follows their name if they change it.
  */
 export function nameFor (id: PoseId, l: Look): string {
   const p = pose(id);
-  const mine = personOf(p) === 'me' || personOf(p) === personOf(pose(l.pose));
-  if (mine) return l.name.trim();
-  return p.who ?? p.label.trim();
+  if (p.who) return p.who;
+  return unnamed(p.label) ? l.name.trim() : p.label.trim();
 }
 
 /** The people in the list, in order, each with their characters: for pickers that group by person. */
@@ -233,7 +238,11 @@ let figures = 0;
  */
 export function figure (id: PoseId, x: number, y: number, w: number, h: number): string {
   const p = pose(id);
-  const k = Math.min(w / p.w, h / p.h);
+  // Sized by the head as well as the box: a picture of the whole of Sukhi
+  // and one of Jazz from the waist up, side by side on two door signs, would
+  // otherwise make him twice her size. No head is wider than six tenths of
+  // the box's shorter side, so the children come out the same size.
+  const k = Math.min(w / p.w, h / p.h, (Math.min(w, h) * 0.6) / p.d);
   const fw = p.w * k;
   const fh = p.h * k;
   const fx = +(x + (w - fw) / 2).toFixed(2);

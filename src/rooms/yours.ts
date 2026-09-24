@@ -18,7 +18,7 @@
 import { look, setLook, useScheme, reset, SCHEMES, LETTERING, BACKDROPS, type Backdrop, type Lettering } from '../look';
 import { ICONS } from '../icons';
 import { esc, heading, colourBar, wireColours, wireChoice, refresh, confirmBox, studio, inSukhiPlay } from '../ui';
-import sukhiMark from '../assets/sukhi.png';
+import sukhiMark from '../assets/sukhi-play.png';
 import { characterTab, wireCharacterTab } from './characters';
 import { backdropPreview } from '../backdrops';
 

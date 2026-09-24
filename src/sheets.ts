@@ -267,7 +267,9 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
         `<circle cx="105" cy="146" r="58" fill="${look.accent}" opacity=".2"/>` +
         figure(me, 38, 78, 134, 128) +
         `<rect x="26" y="206" width="158" height="1" fill="${look.accent}" opacity=".6"/>` +
-        logo(look, 34, 214, 46) +
+        // The logo on a diary cover has the cover's character in it, not
+        // whoever is the studio's own: Sukhi's diary has Sukhi on its badge.
+        logo({ ...look, brand: { ...look.brand, pose: me } }, 34, 214, 46) +
         `<g transform="rotate(-8 150 240)"><rect x="118" y="226" width="64" height="24" rx="3" fill="none" stroke="${look.accent2}" stroke-width="1.6"/>` +
         `<text x="150" y="236.5" text-anchor="middle" font-size="6.5" font-weight="900" fill="${look.accent2}" letter-spacing="1">PRIVATE</text>` +
         `<text x="150" y="245" text-anchor="middle" font-size="5" font-weight="800" fill="${look.accent2}" letter-spacing="1">KEEP OUT</text></g>` +

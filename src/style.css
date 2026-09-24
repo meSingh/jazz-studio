@@ -129,7 +129,6 @@ img { display: block; max-width: 100%; }
 }
 .foot img { width: 28px; height: 28px; border-radius: 8px; }
 .foot a, .foot b { color: inherit; font-weight: 800; }
-.foot-dot { opacity: .5; }
 
 .home-btn {
   display: inline-flex;
@@ -857,8 +856,9 @@ img { display: block; max-width: 100%; }
 .person { margin-top: 18px; }
 .person-name { margin: 0 0 8px; font-size: 16px; font-weight: var(--heavy); }
 .person-name small { font-size: 14px; font-weight: 700; opacity: .7; margin-left: 4px; }
-.chars--add { margin-top: 18px; align-items: center; }
-.add-who { margin: 0; }
+.chars--add { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 18px; }
+.chars--add .char--add { flex: 0 0 150px; }
+.add-who { flex: 1 1 200px; max-width: 420px; margin: 0; }
 .card .poses { grid-template-columns: repeat(6, minmax(0, 1fr)); margin-top: 8px; }
 .card .colourbar { box-shadow: none; background: var(--card2); margin-top: 10px; }
 

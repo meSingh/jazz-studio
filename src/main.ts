@@ -22,7 +22,7 @@ import { GROUPS } from './sheets';
 import { makesRoom } from './rooms/makes';
 import { yoursRoom } from './rooms/yours';
 import { install, installed } from './install';
-import sukhiMark from './assets/sukhi.png';
+import sukhiMark from './assets/sukhi-play.png';
 import { inSukhiPlay } from './ui';
 import { openKeep } from './rooms/keep';
 import { showing } from './prints';
@@ -95,8 +95,10 @@ function foot (): string {
   const link = (text: string): string => inSukhiPlay
     ? `<b>${text}</b>`
     : `<a href="https://sukhiplay.com" target="_blank" rel="noopener">${text}</a>`;
+  // Sukhi Play's own icon, not Sukhi Colouring's: the studio belongs to Sukhi
+  // Play. The name is the link, so the address is not written out as well.
   return `<footer class="foot"><img src="${sukhiMark}" alt="" width="28" height="28">` +
-    `<span>Part of ${link('Sukhi Play')}</span><span class="foot-dot" aria-hidden="true">·</span>${link('sukhiplay.com')}</footer>`;
+    `<span>Part of ${link('Sukhi Play')}</span></footer>`;
 }
 
 function top (r: Room, thing?: string): string {

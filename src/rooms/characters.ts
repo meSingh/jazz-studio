@@ -26,7 +26,7 @@
  */
 import { look, setLook } from '../look';
 import {
-  poses, pose, hasOwn, img, faceImg, saveOwn, removeOwn, nudgeOwn, renameOwn, people, personOf, setsNow, useSets,
+  poses, pose, hasOwn, img, faceImg, saveOwn, removeOwn, nudgeOwn, renameOwn, people, setsNow, useSets,
   JAZZ, SUKHI
 } from '../character';
 import { cutOut, photoOf, type Cut } from '../cutout';
@@ -104,7 +104,7 @@ export function characterTab (): string {
         }).join('')}
       </div>
       ${people(l).map((g) => `<div class="person">
-        <h3 class="person-name">${g.key === personOf(mine) ? `You${l.name ? ` <small>${esc(l.name)}</small>` : ''}` : esc(g.name)}</h3>
+        <h3 class="person-name">${esc(g.name)}${g.key === 'me' && l.name ? ' <small>you</small>' : ''}</h3>
         <div class="chars" role="radiogroup" aria-label="${esc(g.name)}">
         ${g.poses.map((p) => `<figure class="char${p.own ? ' char--own' : ''}${p.id === mine.id ? ' char--mine' : ''}">
           <button type="button" class="char-pick" role="radio" data-choose="${p.id}" aria-checked="${p.id === mine.id}" aria-label="${esc(p.label || g.name)}">
@@ -112,7 +112,7 @@ export function characterTab (): string {
             ${p.id === mine.id ? '<span class="char-badge">Yours</span>' : ''}
           </button>
           ${p.own
-            ? `<input class="char-name" data-rename="${p.id}" value="${esc(unnamedLabel(p.label) ? '' : p.label)}" maxlength="20" placeholder="Whose? You" aria-label="Whose character is this? Leave it empty for you">
+            ? `<input class="char-name" data-rename="${p.id}" value="${esc(unnamedLabel(p.label) ? l.name.trim() : p.label)}" maxlength="20" placeholder="${esc(l.name.trim() || 'Your name')}" aria-label="Whose character is this? Leave it as your name for yours">
                <div class="char-tools">
                  <button type="button" class="mini" data-nudge="${p.id}" data-dy="-0.06" title="Move the face up" aria-label="Move up">${ICONS.up}</button>
                  <button type="button" class="mini" data-nudge="${p.id}" data-dy="0.06" title="Move the face down" aria-label="Move down">${ICONS.down}</button>
