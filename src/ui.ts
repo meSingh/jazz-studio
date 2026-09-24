@@ -7,7 +7,7 @@
  * than a trip to Make it yours and back. A choice made there is hers
  * everywhere.
  */
-import { look, setLook, useScheme, SCHEMES, PALETTE, LETTERING, type Lettering } from './look';
+import { look, setLook, SCHEMES, PALETTE, LETTERING, type Lettering, type Look } from './look';
 import { PATTERNS, defs, type PatternName } from './patterns';
 import { poses, faceImg, type PoseId } from './character';
 import { ICONS } from './icons';
@@ -95,25 +95,63 @@ export function scoped (svg: string, prefix: string): string {
     .replace(/href="#([^"]+)"/g, `href="#${prefix}$1"`);
 }
 
+/* Designs ---------------------------------------------------------------- */
+
+/**
+ * What a colour strip or pattern picker changes. The studio's own look, in
+ * Make it yours, or one sheet's design, in a tool. A tool changing its sheet
+ * must never change the studio: the screens, and every other sheet, stay as
+ * they were.
+ */
+export interface DesignTarget {
+  /** The look to show and draw with: the studio's, with this sheet's changes over it. */
+  get: () => Look;
+  set: (change: Design) => void;
+  /** For a sheet: back to the studio's look. Absent for the studio itself. */
+  clear?: () => void;
+  /** For a sheet: whether it has any changes of its own. */
+  custom?: () => boolean;
+}
+
+/** The parts of a look that a sheet can have of its own. */
+export type Design = Partial<Pick<Look, 'paper' | 'ink' | 'accent' | 'accent2' | 'scheme' | 'lettering' | 'pattern'>>;
+
+export const studio: DesignTarget = { get: look, set: (c) => setLook(c) };
+
+/** A sheet's design, kept in `read`/`write`, over the studio's look. */
+export function sheetDesign (read: () => Design | undefined, write: (d: Design | undefined) => void): DesignTarget {
+  return {
+    get: () => ({ ...look(), ...(read() ?? {}) }),
+    set: (c) => write({ ...(read() ?? {}), ...c }),
+    clear: () => write(undefined),
+    custom: () => Object.keys(read() ?? {}).length > 0
+  };
+}
+
 /* Colours ---------------------------------------------------------------- */
 
 /** The lettering row of the strip: each style, written in their name. */
-function lettersRow (l: ReturnType<typeof look>): string {
+function lettersRow (l: Look): string {
   return `<div class="cb-row"><span class="cb-label">Letters</span><div class="cb-scroll">${(Object.keys(LETTERING) as Lettering[]).map((k) =>
     `<button type="button" class="letters" data-lettering="${k}" aria-pressed="${k === l.lettering}" title="${LETTERING[k].label}" ` +
     `style="font-family:${LETTERING[k].stack.replace(/"/g, "'")};font-weight:${LETTERING[k].weight}">${esc(l.name.slice(0, 8) || 'Aa')}</button>`).join('')}</div></div>`;
 }
 
 /**
- * `sets` false leaves out the row of colour sets, and `letters` false the
- * lettering row, for a page that shows them bigger already.
+ * The strip of colours and lettering. `sets` false leaves out the row of
+ * colour sets, and `letters` false the lettering row, for a page that shows
+ * them bigger already. Over a sheet it says it is for that sheet, and offers
+ * the way back to the studio's look once the sheet has changes of its own.
  */
-export function colourBar (sets = true, letters = true): string {
-  const l = look();
+export function colourBar (target: DesignTarget, sets = true, letters = true): string {
+  const l = target.get();
   const swatches = (key: 'accent' | 'accent2'): string =>
     PALETTE.map((c) => `<button type="button" class="swatch" data-${key}="${c}" style="--c:${c}" aria-label="${c}" aria-pressed="${l[key].toUpperCase() === c}"></button>`).join('') +
     `<label class="swatch swatch--own" title="Any colour"><input type="color" data-own="${key}" value="${l[key]}"><span aria-hidden="true">+</span></label>`;
-  return `<section class="colourbar" aria-label="Colours">
+  const head = target.clear
+    ? `<div class="cb-head"><span>For this sheet only</span>${target.custom?.() ? '<button type="button" class="cb-studio">Use my studio colours</button>' : ''}</div>`
+    : '';
+  return `<section class="colourbar" aria-label="Colours">${head}
     ${sets ? `<div class="cb-row"><span class="cb-label">Colours</span><div class="cb-scroll">${SCHEMES.map((s) =>
       `<button type="button" class="set" data-scheme="${s.id}" aria-pressed="${s.id === l.scheme}" title="${s.label}" style="--p:${s.paper}">` +
       `<i style="background:${s.accent}"></i><i style="background:${s.accent2}"></i><span>${s.label}</span></button>`).join('')}</div></div>` : ''}
@@ -123,19 +161,23 @@ export function colourBar (sets = true, letters = true): string {
   </section>`;
 }
 
-export function wireColours (root: HTMLElement): void {
+export function wireColours (root: HTMLElement, target: DesignTarget): void {
+  const set = (c: Design): void => { target.set(c); refresh(); };
   root.querySelectorAll<HTMLButtonElement>('.colourbar [data-scheme]').forEach((b) =>
-    b.addEventListener('click', () => { useScheme(b.dataset.scheme!); refresh(); }));
+    b.addEventListener('click', () => {
+      const s = SCHEMES.find((x) => x.id === b.dataset.scheme);
+      if (s) set({ paper: s.paper, ink: s.ink, accent: s.accent, accent2: s.accent2, scheme: s.id });
+    }));
   root.querySelectorAll<HTMLButtonElement>('.colourbar [data-accent]').forEach((b) =>
-    b.addEventListener('click', () => { setLook({ accent: b.dataset.accent!, scheme: 'own' }); refresh(); }));
+    b.addEventListener('click', () => set({ accent: b.dataset.accent!, scheme: 'own' })));
   root.querySelectorAll<HTMLButtonElement>('.colourbar [data-accent2]').forEach((b) =>
-    b.addEventListener('click', () => { setLook({ accent2: b.dataset.accent2!, scheme: 'own' }); refresh(); }));
+    b.addEventListener('click', () => set({ accent2: b.dataset.accent2!, scheme: 'own' })));
   root.querySelectorAll<HTMLButtonElement>('.colourbar [data-lettering]').forEach((b) =>
-    b.addEventListener('click', () => { setLook({ lettering: b.dataset.lettering as Lettering }); refresh(); }));
+    b.addEventListener('click', () => set({ lettering: b.dataset.lettering as Lettering })));
   root.querySelectorAll<HTMLInputElement>('.colourbar [data-own]').forEach((input) => {
-    input.addEventListener('input', () => setLook({ [input.dataset.own!]: input.value, scheme: 'own' }));
-    input.addEventListener('change', refresh);
+    input.addEventListener('change', () => set({ [input.dataset.own!]: input.value, scheme: 'own' }));
   });
+  root.querySelector('.colourbar .cb-studio')?.addEventListener('click', () => { target.clear?.(); refresh(); });
   // Keep the chosen colour set in view, rather than scrolled off to the side.
   root.querySelectorAll<HTMLElement>('.colourbar [aria-pressed="true"]').forEach((el) =>
     el.scrollIntoView({ block: 'nearest', inline: 'center' }));
@@ -147,8 +189,8 @@ export function wireColours (root: HTMLElement): void {
  * The patterns as large squares, each showing enough of the pattern to judge
  * it, with its name under it. The chosen one has a ring and a tick.
  */
-export function patternPicker (): string {
-  const l = look();
+export function patternPicker (target: DesignTarget): string {
+  const l = target.get();
   return `<div class="pats" role="radiogroup" aria-label="Pattern">${PATTERNS.map((p) =>
     `<button type="button" class="pat" role="radio" data-pattern="${p.id}" aria-checked="${p.id === l.pattern}">` +
     `<svg viewBox="0 0 60 60" aria-hidden="true"><defs>${defs(`sw-${p.id}`, p.id, l, 1.3)}</defs>` +
@@ -156,8 +198,8 @@ export function patternPicker (): string {
     `<span class="pat-tick" aria-hidden="true">${ICONS.tick}</span><span class="pat-name">${p.label}</span></button>`).join('')}</div>`;
 }
 
-export function wirePatterns (root: HTMLElement): void {
-  wireChoice(root, 'pattern', (p) => { setLook({ pattern: p as PatternName }); refresh(); });
+export function wirePatterns (root: HTMLElement, target: DesignTarget): void {
+  wireChoice(root, 'pattern', (p) => { target.set({ pattern: p as PatternName }); refresh(); });
 }
 
 /* Poses ------------------------------------------------------------------ */

@@ -137,6 +137,9 @@ function load (): Look {
 
 export function look (): Look { return current; }
 
+/** A look's lettering as a CSS font stack, for an SVG's style attribute. */
+export const fontOf = (l: Look): string => LETTERING[l.lettering].stack.replace(/"/g, "'");
+
 export function setLook (change: Partial<Look>): void {
   current = { ...current, ...change, brand: { ...current.brand, ...(change.brand ?? {}) } };
   try { localStorage.setItem(KEY, JSON.stringify(current)); } catch { /* keep it for this visit */ }

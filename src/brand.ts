@@ -6,7 +6,7 @@
  * `logo()` draws into a square box at (x, y) of the given size, in whatever
  * units the surrounding SVG uses (millimetres on sheets, pixels on screen).
  */
-import { light, type Look, type LogoStyle } from './look';
+import { light, fontOf, type Look, type LogoStyle } from './look';
 import { face } from './character';
 
 export const LOGO_STYLES: Array<{ id: LogoStyle; label: string }> = [
@@ -87,5 +87,5 @@ export function logo (look: Look, x: number, y: number, size: number): string {
 
 /** A logo on its own, for the screen. */
 export function logoSvg (look: Look, cls = ''): string {
-  return `<svg class="${cls}" viewBox="0 0 100 100" role="img" aria-label="${esc(look.brand.name)} logo" style="font-family:var(--lettering)">${logo(look, 0, 0, 100)}</svg>`;
+  return `<svg class="${cls}" viewBox="0 0 100 100" role="img" aria-label="${esc(look.brand.name)} logo" style="font-family:${fontOf(look)}">${logo(look, 0, 0, 100)}</svg>`;
 }

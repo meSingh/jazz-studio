@@ -5,6 +5,8 @@
  *                        it theirs (see characters.ts)
  *   Look of the studio   colours, lettering and background, as three equal
  *                        parts rather than colours with two footnotes
+ *   About                what this is, who made it and for whom, what it
+ *                        keeps and does not, and that it is part of Sukhi Play
  *   Start again          on its own, because it is a big decision: what goes
  *                        back, what is kept, and a question before anything
  *
@@ -15,13 +17,15 @@
  */
 import { look, setLook, useScheme, reset, SCHEMES, LETTERING, BACKDROPS, type Backdrop, type Lettering } from '../look';
 import { ICONS } from '../icons';
-import { esc, heading, colourBar, wireColours, wireChoice, refresh, confirmBox } from '../ui';
+import { esc, heading, colourBar, wireColours, wireChoice, refresh, confirmBox, studio, inSukhiPlay } from '../ui';
+import sukhiMark from '../assets/sukhi.png';
 import { characterTab, wireCharacterTab } from './characters';
 import { backdropPreview } from '../backdrops';
 
 export const TABS = [
   { id: 'character', label: 'Character and name' },
   { id: 'look', label: 'Look of the studio' },
+  { id: 'about', label: 'About' },
   { id: 'again', label: 'Start again' }
 ] as const;
 
@@ -35,6 +39,8 @@ export function yoursRoom (main: HTMLElement, sub: string): void {
     wireCharacterTab(main);
   } else if (tab === 'look') {
     lookTab(main, nav);
+  } else if (tab === 'about') {
+    aboutTab(main, nav);
   } else {
     againTab(main, nav);
   }
@@ -52,7 +58,7 @@ function lookTab (main: HTMLElement, nav: string): void {
         `<button type="button" class="scheme" role="radio" data-set="${s.id}" aria-checked="${s.id === l.scheme}" style="--p:${s.paper};--i:${s.ink}">` +
         `<span class="scheme-card"><i style="background:${s.accent}"></i><i style="background:${s.accent2}"></i><b>Aa</b></span>` +
         `<span>${s.label}</span></button>`).join('')}</div>
-      ${colourBar(false, false)}
+      ${colourBar(studio, false, false)}
       <div class="colours">
         ${colour('paper', 'Background')}${colour('ink', 'Writing')}${colour('accent', 'Main')}${colour('accent2', 'Second')}
       </div>
@@ -78,11 +84,41 @@ function lookTab (main: HTMLElement, nav: string): void {
   wireChoice(main, 'set', (id) => { useScheme(id); refresh(); });
   wireChoice(main, 'lettering', (k) => { setLook({ lettering: k as Lettering }); refresh(); });
   wireChoice(main, 'backdrop', (b) => { setLook({ backdrop: b as Backdrop }); refresh(); });
-  wireColours(main);
+  wireColours(main, studio);
   main.querySelectorAll<HTMLInputElement>('[data-colour]').forEach((input) => {
     input.addEventListener('input', () => setLook({ [input.dataset.colour!]: input.value, scheme: 'own' }));
     input.addEventListener('change', refresh);
   });
+}
+
+/**
+ * What the studio is, like Sukhi Colouring's About: the icon, what it does,
+ * who made it and for whom, what it keeps and does not, and what it belongs
+ * to, with the way to sukhiplay.com (written out inside Sukhi Play, where a
+ * link cannot leave the locked screen).
+ */
+function aboutTab (main: HTMLElement, nav: string): void {
+  const out = (href: string, text: string): string => inSukhiPlay
+    ? `<b>${text}</b>`
+    : `<a class="out" href="${href}" target="_blank" rel="noopener">${text}</a>`;
+  main.innerHTML = `${nav}<section class="card card--narrow about">
+    <img class="about-icon" src="./icon-192.png" alt="" width="96" height="96">
+    <h2>Jazz's Studio</h2>
+    <p class="about-what">Design and print your own stickers, labels, diary, planners and more, make things from boxes and
+      cartons, give yourself a brand, and play with secret codes and story ideas.</p>
+    <p class="about-by">Made by Mandeep Singh, for his daughter Jazz, who loves stationery and turns the recycling into things.</p>
+    <ul class="about-promises">
+      <li>${ICONS.tick}<span>Nothing is collected, and nothing is sent anywhere</span></li>
+      <li>${ICONS.tick}<span>No accounts, no adverts, nothing to buy</span></li>
+      <li>${ICONS.tick}<span>Works with no internet once it has opened</span></li>
+      <li>${ICONS.tick}<span>Your makes and characters stay on this device</span></li>
+    </ul>
+    <div class="about-part">
+      <img src="${sukhiMark}" alt="" width="44" height="44">
+      <p>Part of ${out('https://sukhiplay.com', 'Sukhi Play')}.
+        More about the studio at ${out('https://sukhiplay.com/studio/', 'sukhiplay.com/studio')}.</p>
+    </div>
+  </section>`;
 }
 
 /** What Start again puts back, and what it leaves alone. Said here and in the question. */

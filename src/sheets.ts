@@ -9,7 +9,7 @@
  * Her character, her logo, her pattern and her colours go on as much of it as
  * makes sense. It is her stationery; it should look like nobody else's.
  */
-import { light, type Look } from './look';
+import { light, fontOf, type Look } from './look';
 import { defs, type PatternName } from './patterns';
 import { face, figure, poses, type PoseId } from './character';
 import { logo, fit } from './brand';
@@ -82,9 +82,10 @@ export const CUT = 'fill="none" stroke-dasharray="2 1.6" stroke-width=".35"';
 export const esc = (s: string): string =>
   s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string);
 
-export function page (defsXml: string, body: string, label: string): string {
+/** A whole A4 sheet. `font` is the sheet's own lettering, not the studio's. */
+export function page (defsXml: string, body: string, label: string, font: string): string {
   return `<svg class="sheet-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" ` +
-    `role="img" aria-label="${esc(label)}" style="font-family:var(--lettering)">` +
+    `role="img" aria-label="${esc(label)}" style="font-family:${font}">` +
     `<defs>${defsXml}</defs><rect width="${W}" height="${H}" fill="#fff"/>${body}</svg>`;
 }
 
@@ -141,6 +142,7 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
   const ink = inkOf(look);
   // The character picked in this tool; "All of me" only means something on the Me stickers.
   const me = o.pose === 'mix' ? look.pose : o.pose;
+  const font = fontOf(look);
   const pat = (scale: number): string => defs('p1', o.pattern, look, scale) + defs('p2', o.pattern, swap(look), scale);
 
   switch (kind) {
@@ -167,7 +169,7 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
           }
         }
       }
-      return page(pat(0.9), body + check(ink), 'Pattern stickers');
+      return page(pat(0.9), body + check(ink), 'Pattern stickers', font);
     }
 
     case 'faces': {
@@ -189,7 +191,7 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
           body += `<circle cx="${cx}" cy="${cy}" r="22.5" ${CUT} stroke="${ink}" opacity=".35"/>`;
         }
       }
-      return page(pat(0.8), body + check(ink), 'Me stickers');
+      return page(pat(0.8), body + check(ink), 'Me stickers', font);
     }
 
     case 'bookmarks': {
@@ -207,7 +209,7 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
           : `<circle cx="${x + 20}" cy="${y + 14}" r="3" fill="#fff" stroke="${ink}" stroke-width=".4"/>`;
         body += `<rect x="${x - 1.5}" y="${y - 1.5}" width="43" height="199" rx="5" ${CUT} stroke="${ink}" opacity=".35"/>`;
       }
-      return page(pat(0.7), body + check(ink), 'Bookmarks');
+      return page(pat(0.7), body + check(ink), 'Bookmarks', font);
     }
 
     case 'labels': {
@@ -227,7 +229,7 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
             `<rect x="${x - 1.5}" y="${y - 1.5}" width="88" height="34" rx="6" ${CUT} stroke="${ink}" opacity=".35"/>`;
         }
       }
-      return page(pat(0.5), body + check(ink), 'Name labels');
+      return page(pat(0.5), body + check(ink), 'Name labels', font);
     }
 
     case 'cover': {
@@ -247,7 +249,7 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
         `<text x="150" y="236.5" text-anchor="middle" font-size="6.5" font-weight="900" fill="${look.accent2}" letter-spacing="1">PRIVATE</text>` +
         `<text x="150" y="245" text-anchor="middle" font-size="5" font-weight="800" fill="${look.accent2}" letter-spacing="1">KEEP OUT</text></g>` +
         `<text x="105" y="268" text-anchor="middle" font-size="5" fill="${look.ink}" opacity=".7" letter-spacing="2">${year}</text>`;
-      return page(pat(1), body, 'Diary cover');
+      return page(pat(1), body, 'Diary cover', font);
     }
 
     case 'diary': {
@@ -268,7 +270,7 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
           `<text x="34" y="73" font-size="${fit(`Write about: ${w}`, 154, 4.8)}" font-weight="800" fill="${ink}">Write about: ${esc(w)}</text>`;
       }
       body += lines + `<text x="192" y="283" text-anchor="end" font-size="3.5" fill="${ink}" opacity=".5">${esc(look.brand.name)}</text>`;
-      return page(pat(0.8), body, 'Diary page');
+      return page(pat(0.8), body, 'Diary page', font);
     }
 
     case 'planner': {
@@ -288,7 +290,7 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
           `<text x="${x + 5}" y="${y + 7}" font-size="5" font-weight="800" fill="${on(c)}">${d}</text>`;
         for (let l = 0; l < 4; l++) body += `<path d="M${x + 5} ${y + 20 + l * 9} H${x + 82}" stroke="${ink}" stroke-width=".3" opacity=".35"/>`;
       });
-      return page(pat(0.8), body + check(ink), 'Week planner');
+      return page(pat(0.8), body + check(ink), 'Week planner', font);
     }
 
     case 'todo': {
@@ -309,7 +311,7 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
             `<path d="M33 ${y + 0.8} H186" stroke="${ink}" stroke-width=".3" opacity=".35"/>`;
         }
       }
-      return page(pat(0.7), body + check(ink), 'To-do lists');
+      return page(pat(0.7), body + check(ink), 'To-do lists', font);
     }
 
     case 'tags': {
@@ -329,7 +331,7 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
           `<text x="${x + 40}" y="${y + 50}" font-size="${fit(from, 40, 8)}" font-weight="900" fill="${ink}">${esc(from)}</text>` +
           `<path d="M${x + 12} ${y - 1.5} H${x + 86.5} V${y + 61.5} H${x + 12} L${x - 1.5} ${y + 48.5} V${y + 11.5}Z" ${CUT} stroke="${ink}" opacity=".3"/>`;
       }
-      return page(pat(0.6), body + check(ink), 'Gift tags');
+      return page(pat(0.6), body + check(ink), 'Gift tags', font);
     }
 
     case 'door': {
@@ -351,7 +353,7 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
         if (o.me) body += figure(o.pose === 'mix' ? poses()[(i + 1) % poses().length].id : o.pose, x + 5, y + 118, 77, 152);
         body += `<path d="${outline}" ${CUT} stroke="${ink}" opacity=".4"/>`;
       }
-      return page(pat(1), body, 'Door sign');
+      return page(pat(1), body, 'Door sign', font);
     }
 
     case 'cards': {
@@ -367,7 +369,7 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
           (w ? `<text x="${x + 46}" y="${y + 37}" font-size="${fit(w, 36, 3.2)}" fill="${look.ink}" opacity=".8">${esc(w)}</text>` : '') +
           `<rect x="${x}" y="${y}" width="85" height="55" rx="3" fill="none" stroke="${ink}" stroke-width=".25" opacity=".4"/>`;
       }
-      return page(pat(0.6), body, 'Business cards');
+      return page(pat(0.6), body, 'Business cards', font);
     }
 
     case 'logos': {
@@ -377,7 +379,7 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
         const y = 16 + Math.floor(i / 3) * 66;
         body += logo(look, x, y, 52) + `<rect x="${x - 3}" y="${y - 3}" width="58" height="58" rx="10" ${CUT} stroke="${ink}" opacity=".3"/>`;
       }
-      return page('', body + check(ink), 'Logo stickers');
+      return page('', body + check(ink), 'Logo stickers', font);
     }
   }
 }

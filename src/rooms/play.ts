@@ -11,7 +11,7 @@ import { save } from '../makes';
 import { ICONS } from '../icons';
 import {
   esc, field, heading, printButton, wirePrint, wireChoice, colourBar, wireColours,
-  patternPicker, wirePatterns, posePicker, refresh, remembered
+  patternPicker, wirePatterns, posePicker, refresh, remembered, sheetDesign, type Design
 } from '../ui';
 import { stationeryState } from './stationery';
 
@@ -35,12 +35,14 @@ export function playRoom (main: HTMLElement, sub: string): void {
 
 /* Name poster ------------------------------------------------------------ */
 
-const posterState = remembered<{ name: string; line: string; pose: PoseId; dark: boolean }>('jazz-studio-poster',
+const posterState = remembered<{ name: string; line: string; pose: PoseId; dark: boolean; design?: Design }>('jazz-studio-poster',
   { name: '', line: '', pose: 'cool', dark: true });
+
+const posterDesign = sheetDesign(() => posterState.get().design, (d) => posterState.set({ design: d }));
 
 function poster (main: HTMLElement): void {
   const s = posterState.get();
-  const l = look();
+  const l = posterDesign.get();
   main.innerHTML = `<div class="workbench">
     <section class="controls">
       ${heading('Words')}
@@ -49,30 +51,31 @@ function poster (main: HTMLElement): void {
       ${heading('Which you')}
       ${posePicker(s.pose, false)}
       ${heading('Pattern')}
-      ${patternPicker()}
+      ${patternPicker(posterDesign)}
       <label class="tick"><input type="checkbox" class="p-dark" ${s.dark ? 'checked' : ''}><span>Dark background</span></label>
     </section>
-    <section class="preview">${colourBar()}<div class="print-area">${posterSheet(s.name, s.line, s.pose, s.dark, l)}</div>${printButton()}</section>
+    <section class="preview">${colourBar(posterDesign)}<div class="print-area">${posterSheet(s.name, s.line, s.pose, s.dark, l)}</div>${printButton()}</section>
   </div>`;
   const redraw = (): void => {
     const now = posterState.get();
-    main.querySelector('.print-area')!.innerHTML = posterSheet(now.name, now.line, now.pose, now.dark, look());
+    main.querySelector('.print-area')!.innerHTML = posterSheet(now.name, now.line, now.pose, now.dark, posterDesign.get());
   };
   main.querySelector<HTMLInputElement>('.p-name')!.addEventListener('input', (e) => { posterState.set({ name: (e.target as HTMLInputElement).value }); redraw(); });
   main.querySelector<HTMLInputElement>('.p-line')!.addEventListener('input', (e) => { posterState.set({ line: (e.target as HTMLInputElement).value }); redraw(); });
   main.querySelector<HTMLInputElement>('.p-dark')!.addEventListener('change', (e) => { posterState.set({ dark: (e.target as HTMLInputElement).checked }); redraw(); });
   wireChoice(main, 'pose', (p) => { posterState.set({ pose: p as PoseId }); refresh(); });
-  wirePatterns(main);
-  wireColours(main);
+  wirePatterns(main, posterDesign);
+  wireColours(main, posterDesign);
   wirePrint(main);
 }
 
 /* Secret codes ----------------------------------------------------------- */
 
-const secretState = remembered<{ message: string }>('jazz-studio-secret', { message: 'Meet me at the treehouse' });
+const secretState = remembered<{ message: string; design?: Design }>('jazz-studio-secret', { message: 'Meet me at the treehouse' });
+const secretDesign = sheetDesign(() => secretState.get().design, (d) => secretState.set({ design: d }));
 
 function secretPreview (message: string): string {
-  const l = look();
+  const l = secretDesign.get();
   const s = 30;
   const glyphs = layout(message || ' ', 560, s);
   const h = glyphs.length ? glyphs[glyphs.length - 1].y + s * 1.4 : s;
@@ -90,15 +93,15 @@ function secret (main: HTMLElement): void {
       <div class="secret-out">${secretPreview(s.message)}</div>
       <p class="hint">This is pigpen, a real secret code. Each letter is the shape of its box in the key. Print it with the key, cut the key off, and give it to a friend.</p>
     </section>
-    <section class="preview">${colourBar()}<div class="print-area">${secretSheet(s.message, look())}</div>${printButton('Print message and key')}</section>
+    <section class="preview">${colourBar(secretDesign)}<div class="print-area">${secretSheet(s.message, secretDesign.get())}</div>${printButton('Print message and key')}</section>
   </div>`;
   const msg = main.querySelector<HTMLTextAreaElement>('.s-msg')!;
   msg.addEventListener('input', () => {
     secretState.set({ message: msg.value });
     main.querySelector('.secret-out')!.innerHTML = secretPreview(msg.value);
-    main.querySelector('.print-area')!.innerHTML = secretSheet(msg.value, look());
+    main.querySelector('.print-area')!.innerHTML = secretSheet(msg.value, secretDesign.get());
   });
-  wireColours(main);
+  wireColours(main, secretDesign);
   wirePrint(main);
 }
 

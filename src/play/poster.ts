@@ -2,7 +2,7 @@
  * A poster of her name: huge letters filled with her pattern, with her
  * character standing underneath. A4, for a bedroom door or a wall.
  */
-import { light, type Look } from '../look';
+import { light, fontOf, type Look } from '../look';
 import { defs } from '../patterns';
 import { figure, type PoseId } from '../character';
 import { fit } from '../brand';
@@ -27,7 +27,7 @@ export function posterSheet (name: string, line: string, pose: PoseId, dark: boo
     (sub ? `<text x="105" y="${y + 16}" text-anchor="middle" font-size="${fit(sub, 150, 9)}" font-weight="800" fill="${look.accent}">${esc(sub)}</text>` : '') +
     `<circle cx="105" cy="206" r="62" fill="${look.accent}" opacity=".16"/>` +
     figure(pose, 30, y + (sub ? 24 : 12), 150, 272 - y - (sub ? 24 : 12));
-  return `<svg class="sheet-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 297" role="img" aria-label="Name poster" style="font-family:var(--lettering)">` +
+  return `<svg class="sheet-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 297" role="img" aria-label="Name poster" style="font-family:${fontOf(look)}">` +
     `<defs>${defs('pp', look.pattern, look, 1)}${defs('pl', look.pattern, look, 1.6)}</defs>` +
     `<rect width="210" height="297" fill="#fff"/>${body}</svg>`;
 }

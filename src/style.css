@@ -51,11 +51,11 @@ body {
 .backdrop-layer {
   position: fixed;
   inset: 0;
-  width: 100%;
-  height: 100%;
   z-index: -1;
+  overflow: hidden;
   pointer-events: none;
 }
+.backdrop-layer svg { display: block; width: 100%; height: 100%; }
 .backdrop-layer .tw { animation: twinkle 4s ease-in-out infinite alternate; }
 .backdrop-layer .tw:nth-child(3n) { animation-duration: 6s; animation-delay: -2s; }
 .backdrop-layer .tw:nth-child(5n) { animation-duration: 5s; animation-delay: -3s; }
@@ -91,16 +91,44 @@ img { display: block; max-width: 100%; }
   min-height: 74px;
 }
 
-.brand-tag {
-  font-size: 20px;
+/* The studio's brand, the same on every page */
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+  color: inherit;
+  text-decoration: none;
+}
+.brand img { width: 40px; height: 40px; border-radius: 12px; box-shadow: 0 4px 12px rgb(0 0 0 / .35); }
+.brand span {
+  font-size: 18px;
   font-weight: var(--heavy);
-  padding: 6px 16px;
+  padding: 4px 12px;
   background: var(--accent);
   color: var(--on-accent);
-  border-radius: 10px;
+  border-radius: 9px;
   transform: rotate(-2deg);
-  box-shadow: 4px 4px 0 var(--accent2);
+  box-shadow: 3px 3px 0 var(--accent2);
 }
+.top-rule { width: 2px; height: 32px; flex: none; border-radius: 2px; background: var(--line); }
+
+/* Sukhi Play's, at the foot of every page */
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 48px 0 0;
+  padding: 18px 0 0;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+  opacity: .8;
+}
+.foot img { width: 28px; height: 28px; border-radius: 8px; }
+.foot a, .foot b { color: inherit; font-weight: 800; }
+.foot-dot { opacity: .5; }
 
 .home-btn {
   display: inline-flex;
@@ -233,8 +261,6 @@ img { display: block; max-width: 100%; }
   clip-path: polygon(3% 0, 97% 4%, 100% 50%, 96% 100%, 2% 96%, 0 50%);
 }
 
-.part { margin: 34px 0 0; text-align: center; font-size: 14px; opacity: .6; }
-.part a { color: inherit; font-weight: 800; }
 
 /* Workbench: choices one side, the sheet the other ----------------- */
 
@@ -450,6 +476,10 @@ img { display: block; max-width: 100%; }
   border-radius: 16px;
   box-shadow: var(--shadow);
 }
+.cb-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 2px; font-size: 13px; font-weight: 800; opacity: .9; }
+.cb-head span { letter-spacing: .04em; text-transform: uppercase; color: var(--accent2); }
+.cb-studio { padding: 4px 12px; border: 2px solid var(--line); border-radius: 999px; background: var(--card2); font-size: 13px; font-weight: 800; }
+.cb-studio:hover { border-color: var(--accent); }
 .cb-row { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .cb-label { flex: 0 0 62px; font-size: 13px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; opacity: .7; }
 .cb-scroll {
@@ -905,6 +935,20 @@ dialog.keep p { margin: 0 0 12px; opacity: .85; }
 .keep-note { font-size: 14px; text-align: left; }
 .keep-done:empty { display: none; }
 
+/* About */
+.about { text-align: center; margin: 0 auto; }
+.about-icon { width: 96px; height: 96px; margin: 14px auto 0; border-radius: 26px; box-shadow: var(--shadow); }
+.about h2 { margin: 12px 0 6px; font-size: 28px; font-weight: var(--heavy); }
+.about-what { opacity: .9; }
+.about-by { font-weight: 700; color: var(--accent2); }
+.about-promises { list-style: none; margin: 16px auto; padding: 0; text-align: left; max-width: 380px; }
+.about-promises li { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
+.about-promises svg { width: 20px; height: 20px; flex: none; color: var(--accent); }
+.about-part { display: flex; align-items: center; gap: 12px; margin-top: 18px; padding: 12px 16px; border-radius: 14px; background: var(--card2); text-align: left; }
+.about-part img { width: 44px; height: 44px; flex: none; border-radius: 12px; }
+.about-part p { margin: 0; }
+.about a.out { color: var(--accent2); font-weight: 800; }
+
 /* Asking first */
 dialog.ask {
   width: min(440px, calc(100vw - 32px));
@@ -1163,6 +1207,8 @@ dialog.how { width: min(560px, calc(100vw - 32px)); }
   .guide summary { flex-wrap: wrap; }
   .colours { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .home-btn span { display: none; }
+  [data-room]:not([data-room="home"]) .brand span { display: none; }
+  .top-rule { display: none; }
   .home-btn { padding: 10px; }
   .spark { flex-direction: column; align-items: center; }
   .spark-card { margin-bottom: 0; }
@@ -1179,6 +1225,14 @@ dialog.how { width: min(560px, calc(100vw - 32px)); }
   .brand-fields { grid-template-columns: 1fr; }
   .cb-label { flex-basis: 50px; font-size: 11px; }
   .chars { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  /* A small phone's top bar: the brand, Back, the title and Keep it all fit,
+     a long title giving way first. */
+  .top { gap: 8px; }
+  .brand img { width: 34px; height: 34px; }
+  .room-title { min-width: 0; font-size: 20px; }
+  .room-title span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .room-title svg { width: 24px; height: 24px; flex: none; }
+  .sheets-hub { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 10px; }
   .backdrops { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .again-lists { grid-template-columns: 1fr; }
   .char-face { width: 72px; }

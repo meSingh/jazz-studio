@@ -7,10 +7,9 @@
  * picture of each sheet in it to choose between. Things that are nearly the
  * same are next to each other, so switching is one tap on the same page.
  */
-import { look } from '../look';
 import { KINDS, GROUPS, sheet, type Kind } from '../sheets';
 import { remembered, scoped } from '../ui';
-import { bench, type BenchState } from './bench';
+import { bench, designFor, type BenchState } from './bench';
 
 export const stationeryState = remembered<BenchState>('jazz-studio-stationery',
   { kind: 'faces', me: true, pose: 'mix', words: {} });
@@ -29,10 +28,10 @@ export function stationeryRoom (main: HTMLElement, sub: string): void {
     return;
   }
   const s = stationeryState.get();
-  const l = look();
   main.innerHTML = `<div class="sheets-hub">${GROUPS.map((g, i) => {
-    // The tile shows the sheet she last used in the group, if she has.
+    // The tile shows the sheet she last used in the group, if she has, in its own design.
     const shown = g.kinds.find((k) => k.id === s.kind)?.id ?? g.kinds[0].id;
+    const l = designFor(stationeryState, shown).get();
     const preview = sheet(shown, { pattern: l.pattern, words: s.words[shown] ?? '', me: s.me, pose: s.pose }, l);
     return `<a class="sheet-tile" href="#/stationery/${g.id}" style="--tilt:${[-0.8, 0.6, -0.4, 0.9, -0.6][i % 5]}deg">` +
       `<span class="sheet-mini">${scoped(preview, `k${i}-`)}</span>` +

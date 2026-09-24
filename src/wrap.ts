@@ -8,7 +8,7 @@
  * big to fit is turned sideways, and one too big for a sheet at all says so
  * rather than printing shrunk.
  */
-import type { Look } from './look';
+import { fontOf, type Look } from './look';
 import { defs, type PatternName } from './patterns';
 import { fit } from './brand';
 import { W, CUT, esc, page, inkOf, check, disc } from './sheets';
@@ -92,7 +92,7 @@ export function wrapSheet (wrap: Wrap, pattern: PatternName, words: string, me: 
   const body = Array.from({ length: copies }, (_, k) => `<g transform="${place(k)}">${inner(k)}</g>`).join('') +
     `<text x="${W / 2}" y="283" text-anchor="middle" font-size="4" fill="${ink}" opacity=".75" font-family="system-ui, sans-serif">${note}</text>` +
     check(ink);
-  return page(defs('p1', pattern, look, 0.8) + glue, body, `${wrap.title} wrap`);
+  return page(defs('p1', pattern, look, 0.8) + glue, body, `${wrap.title} wrap`, fontOf(look));
 }
 
 /**

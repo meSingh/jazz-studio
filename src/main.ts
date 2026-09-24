@@ -13,7 +13,7 @@ import { apply, look } from './look';
 import { defs, type PatternName } from './patterns';
 import { img, peekImg, either, loadOwn, setKeepJazz, type PoseId } from './character';
 import { ICONS } from './icons';
-import { esc, onRefresh, inSukhiPlay } from './ui';
+import { esc, onRefresh } from './ui';
 import { stationeryRoom } from './rooms/stationery';
 import { boxRoom } from './rooms/box';
 import { brandRoom } from './rooms/brand';
@@ -22,6 +22,8 @@ import { GROUPS } from './sheets';
 import { makesRoom } from './rooms/makes';
 import { yoursRoom } from './rooms/yours';
 import { install, installed } from './install';
+import sukhiMark from './assets/sukhi.png';
+import { inSukhiPlay } from './ui';
 import { openKeep } from './rooms/keep';
 
 const app = document.getElementById('app')!;
@@ -47,16 +49,16 @@ function render (keepScroll = false): void {
   const y = window.scrollY;
   // Start again can change this; the character list reads it every time.
   setKeepJazz(look().keepJazz);
-  const name = look().name;
   // A page inside a room: a plaything, or one sheet of stationery.
   const group = room === 'stationery'
     ? GROUPS.find((g) => g.id === sub) ?? GROUPS.find((g) => g.kinds.some((k) => k.id === sub))
     : undefined;
   const thing = room === 'play' ? PLAYTHINGS.find((t) => t.id === sub)
     : group ? { title: group.label } : undefined;
-  document.title = room === 'home' ? `${name}'s Studio` : `${thing?.title ?? ROOMS[room].title} · ${name}'s Studio`;
+  // The studio's own name, which does not change with hers.
+  document.title = room === 'home' ? BRAND : `${thing?.title ?? ROOMS[room].title} · ${BRAND}`;
   app.dataset.room = room;
-  app.innerHTML = top(room, thing?.title) + '<main class="room"></main>';
+  app.innerHTML = top(room, thing?.title) + '<main class="room"></main>' + foot();
   app.querySelector('.keep-btn')?.addEventListener('click', openKeep);
   const main = app.querySelector('main')!;
   if (room === 'home') home(main);
@@ -69,16 +71,39 @@ function render (keepScroll = false): void {
   window.scrollTo(0, keepScroll ? y : 0);
 }
 
+/**
+ * The studio's brand, the same on every page and whatever she changes: its own
+ * icon (the app's, Jazz drawing) and its own name. Her name and character are
+ * hers to change; this is what the thing is called.
+ */
+const BRAND = "Jazz's Studio";
+
+const brandMark = (): string =>
+  `<a class="brand" href="#/" aria-label="${BRAND}, home"><img src="./icon-192.png" alt="" width="40" height="40"><span>${BRAND}</span></a>`;
+
+/**
+ * Sukhi Play's brand, at the foot of every page, because the studio is part of
+ * it: the Sukhi mark, and the way to sukhiplay.com. Inside Sukhi Play a link
+ * cannot leave the locked screen, so there it is the words alone.
+ */
+function foot (): string {
+  const link = (text: string): string => inSukhiPlay
+    ? `<b>${text}</b>`
+    : `<a href="https://sukhiplay.com" target="_blank" rel="noopener">${text}</a>`;
+  return `<footer class="foot"><img src="${sukhiMark}" alt="" width="28" height="28">` +
+    `<span>Part of ${link('Sukhi Play')}</span><span class="foot-dot" aria-hidden="true">·</span>${link('sukhiplay.com')}</footer>`;
+}
+
 function top (r: Room, thing?: string): string {
-  const name = esc(look().name);
   // Only when there is something to install: not on a home screen already,
   // and not inside Sukhi Play.
   const keep = installed() ? ''
     : `<button type="button" class="keep-btn" title="Keep it on this device">${ICONS.install}<span>Keep it on this device</span></button>`;
-  if (r === 'home') return `<header class="top"><span class="brand-tag">${name}'s Studio</span>${keep}</header>`;
+  if (r === 'home') return `<header class="top">${brandMark()}${keep}</header>`;
   // Inside a room's page, Back goes to the room; otherwise home.
   const back = thing ? `#/${r}` : '#/';
-  return `<header class="top"><a class="home-btn" href="${back}">${ICONS.back}<span>${thing ? ROOMS[r].title : 'Home'}</span></a>` +
+  return `<header class="top">${brandMark()}<span class="top-rule" aria-hidden="true"></span>` +
+    `<a class="home-btn" href="${back}">${ICONS.back}<span>${thing ? ROOMS[r].title : 'Home'}</span></a>` +
     `<h1 class="room-title">${ROOMS[r].icon}<span>${thing ?? ROOMS[r].title}</span></h1>${keep}</header>`;
 }
 
@@ -97,8 +122,7 @@ function home (main: HTMLElement): void {
       <div class="hello-me">${img(l.pose, 'hello-img')}</div>
       <div class="hello-words"><h2>Hi ${esc(l.name)}</h2><p>What shall we make today?</p></div>
     </section>
-    <section class="tiles">${tiles}</section>
-    ${inSukhiPlay ? '' : '<p class="part">Part of <a href="https://sukhiplay.com" target="_blank" rel="noopener">Sukhi Play</a></p>'}`;
+    <section class="tiles">${tiles}</section>`;
 }
 
 install();

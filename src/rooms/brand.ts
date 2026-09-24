@@ -9,12 +9,13 @@ import { look, setLook, type LogoStyle } from '../look';
 import { logoSvg, LOGO_STYLES } from '../brand';
 import { BRAND_KINDS } from '../sheets';
 import { esc, field, heading, wireChoice, posePicker, remembered, refresh } from '../ui';
-import { bench, type BenchState } from './bench';
+import { bench, designFor, type BenchState } from './bench';
 
 const state = remembered<BenchState>('jazz-studio-brand-bench', { kind: 'cards', me: true, pose: 'portrait', words: {} });
 
 export function brandRoom (main: HTMLElement): void {
-  const l = look();
+  // The logo is shown in the design of the sheet it is being made for.
+  const l = designFor(state, state.get().kind).get();
   const b = l.brand;
   const top = `<section class="brand-maker">
     <div class="brand-preview">${logoSvg(l, 'brand-logo')}</div>
@@ -45,7 +46,7 @@ export function brandRoom (main: HTMLElement): void {
     // The logo follows as she types; the sheet catches up when she finishes.
     input.addEventListener('input', () => {
       setLook({ brand: { ...look().brand, [key]: input.value } });
-      main.querySelector('.brand-preview')!.innerHTML = logoSvg(look(), 'brand-logo');
+      main.querySelector('.brand-preview')!.innerHTML = logoSvg({ ...designFor(state, state.get().kind).get(), brand: look().brand }, 'brand-logo');
     });
   };
   text('.b-name', 'name');

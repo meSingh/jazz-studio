@@ -6,16 +6,15 @@
  * laid out as four numbered steps, and every project shows a drawing of
  * exactly what to measure with her own numbers on it.
  */
-import { look } from '../look';
 import { PROJECTS } from '../projects';
 import { wrapSheet, wrapFits, measureDiagram, fmt } from '../wrap';
 import {
   esc, field, printButton, wirePrint, wireChoice, colourBar, wireColours,
-  patternPicker, wirePatterns, posePicker, refresh, remembered
+  patternPicker, wirePatterns, posePicker, refresh, remembered, sheetDesign, type Design
 } from '../ui';
 import type { PoseId } from '../character';
 
-const state = remembered<{ project: string; width: number; height: number; tab: boolean; words: string; me: boolean; pose: PoseId | '' }>(
+const state = remembered<{ project: string; width: number; height: number; tab: boolean; words: string; me: boolean; pose: PoseId | ''; design?: Design }>(
   'jazz-studio-box', { project: 'pencil-pot', width: 15.5, height: 10, tab: true, words: '', me: true, pose: '' });
 
 /** Small drawings for the project cards. */
@@ -29,7 +28,9 @@ const ART: Record<string, string> = {
 
 export function boxRoom (main: HTMLElement): void {
   const s = state.get();
-  const l = look();
+  // The wrap's own colours, lettering and pattern; the studio's are not touched.
+  const design = sheetDesign(() => state.get().design, (d) => state.set({ design: d }));
+  const l = design.get();
   const project = PROJECTS.find((p) => p.id === s.project) ?? PROJECTS[0];
   const wrap = { width: s.width, height: s.height, tab: s.tab, title: project.title };
   const across = project.shape === 'tube' ? 'Way round' : 'Across';
@@ -54,7 +55,7 @@ export function boxRoom (main: HTMLElement): void {
       <p class="fit" role="status"></p>
 
       <h2 class="box-title"><b>3</b>Make it yours</h2>
-      ${patternPicker()}
+      ${patternPicker(design)}
       ${field('Words on it (or leave empty)', `<input class="words" maxlength="24" placeholder="Pens" value="${esc(s.words)}">`)}
       <label class="tick"><input type="checkbox" class="me" ${s.me ? 'checked' : ''}><span>Put me on it</span></label>
       ${s.me ? posePicker(s.pose || l.pose, false) : ''}
@@ -63,14 +64,15 @@ export function boxRoom (main: HTMLElement): void {
       <p class="hint">Print at actual size, so it fits. Then:</p>
       <ol class="steps">${project.steps.map((st) => `<li>${st}</li>`).join('')}</ol>
     </section>
-    <section class="preview">${colourBar()}<div class="print-area">${wrapSheet(wrap, l.pattern, s.words, s.me, l, s.pose || l.pose)}</div>${printButton()}</section>
+    <section class="preview">${colourBar(design)}<div class="print-area">${wrapSheet(wrap, l.pattern, s.words, s.me, l, s.pose || l.pose)}</div>${printButton()}</section>
   </div>`;
 
   const redraw = (): void => {
     const now = state.get();
     const w = { width: now.width, height: now.height, tab: now.tab, title: project.title };
-    main.querySelector('.print-area')!.innerHTML = wrapSheet(w, look().pattern, now.words, now.me, look(), now.pose || look().pose);
-    main.querySelector('.measure')!.innerHTML = measureDiagram(project.shape, now.width, now.height, look());
+    const d = design.get();
+    main.querySelector('.print-area')!.innerHTML = wrapSheet(w, d.pattern, now.words, now.me, d, now.pose || d.pose);
+    main.querySelector('.measure')!.innerHTML = measureDiagram(project.shape, now.width, now.height, d);
     const fits = wrapFits(w);
     main.querySelector('.fit')!.textContent = fits === 'sideways' ? 'Turned sideways so it fits on the paper.'
       : fits ? '' : 'That is bigger than a sheet of paper. Try one side at a time.';
@@ -95,8 +97,8 @@ export function boxRoom (main: HTMLElement): void {
   wireChoice(main, 'pose', (p) => { state.set({ pose: p }); refresh(); });
   const words = main.querySelector<HTMLInputElement>('.words')!;
   words.addEventListener('input', () => { state.set({ words: words.value }); redraw(); });
-  wirePatterns(main);
-  wireColours(main);
+  wirePatterns(main, design);
+  wireColours(main, design);
   wirePrint(main);
   redraw();
 }

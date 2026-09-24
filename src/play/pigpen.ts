@@ -12,7 +12,7 @@
  * can. The glyphs are drawn in a unit box and scaled to wherever they go.
  */
 import type { Look } from '../look';
-import { light } from '../look';
+import { light, fontOf } from '../look';
 import { logo } from '../brand';
 
 type Glyph = { lines: string; dot: [number, number] | null };
@@ -106,6 +106,6 @@ export function secretSheet (message: string, look: Look): string {
     `<text x="20" y="217" font-size="5" font-weight="900" fill="${ink}">The key</text>` +
     `<text x="192" y="217" text-anchor="end" font-size="3.5" fill="${ink}" opacity=".7">Cut this off and give it to a friend</text>` +
     key(20, 228, 12.4, ink, look.accent);
-  return `<svg class="sheet-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 297" role="img" aria-label="Secret message" style="font-family:var(--lettering)">` +
+  return `<svg class="sheet-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 297" role="img" aria-label="Secret message" style="font-family:${fontOf(look)}">` +
     `<rect width="210" height="297" fill="#fff"/>${body}</svg>`;
 }

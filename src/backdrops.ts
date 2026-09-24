@@ -163,12 +163,15 @@ export function backdropPreview (kind: Backdrop, look: Look): string {
 }
 
 let layer: SVGSVGElement | null = null;
+let frame: HTMLDivElement | null = null;
 let current: { kind: Backdrop; look: Look } | null = null;
 let timer = 0;
 
 function paint (): void {
   if (!layer || !current) return;
-  const w = window.innerWidth;
+  // The page's own width, not the window's: the window's counts a scrollbar,
+  // and a background wider than the page made a phone scroll sideways.
+  const w = document.documentElement.clientWidth;
   const h = window.innerHeight;
   layer.setAttribute('viewBox', `0 0 ${w} ${h}`);
   layer.innerHTML = drawBackdrop(current.kind, current.look, w, h);
@@ -178,11 +181,15 @@ function paint (): void {
 export function showBackdrop (kind: Backdrop, look: Look): void {
   current = { kind, look };
   if (!layer) {
+    // In a frame that is exactly the screen and clips, so nothing it draws
+    // can make the page wider.
+    frame = document.createElement('div');
+    frame.className = 'backdrop-layer';
+    frame.setAttribute('aria-hidden', 'true');
     layer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    layer.classList.add('backdrop-layer');
-    layer.setAttribute('aria-hidden', 'true');
     layer.setAttribute('preserveAspectRatio', 'none');
-    document.body.prepend(layer);
+    frame.append(layer);
+    document.body.prepend(frame);
     window.addEventListener('resize', () => {
       clearTimeout(timer);
       timer = window.setTimeout(paint, 150);
