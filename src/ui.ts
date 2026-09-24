@@ -9,7 +9,7 @@
  */
 import { look, setLook, useScheme, SCHEMES, PALETTE } from './look';
 import { PATTERNS, defs, type PatternName } from './patterns';
-import { POSES, img, type PoseId } from './character';
+import { poses, faceImg, type PoseId } from './character';
 import { ICONS } from './icons';
 
 export const esc = (s: string): string =>
@@ -133,10 +133,11 @@ export function wirePatterns (root: HTMLElement): void {
 /* Poses ------------------------------------------------------------------ */
 
 export function posePicker (current: PoseId | 'mix', mix: boolean, attr = 'pose'): string {
-  return `<div class="poses" role="radiogroup" aria-label="Which you">${POSES.map((p) =>
+  const list = poses();
+  return `<div class="poses" role="radiogroup" aria-label="Which you">${list.map((p) =>
     `<button type="button" class="pose" role="radio" data-${attr}="${p.id}" aria-checked="${p.id === current}" title="${p.label}">` +
-    `${img(p.id, 'pose-img')}<span>${p.label}</span></button>`).join('')}${mix
+    `${faceImg(p.id, 'pose-img')}<span>${esc(p.label)}</span></button>`).join('')}${mix && list.length > 1
     ? `<button type="button" class="pose pose--mix" role="radio" data-${attr}="mix" aria-checked="${current === 'mix'}">` +
-      `<span class="mix-stack">${POSES.slice(0, 3).map((p) => img(p.id, 'pose-img')).join('')}</span><span>All of me</span></button>`
+      `<span class="mix-stack">${list.slice(0, 3).map((p) => faceImg(p.id, 'mix-face')).join('')}</span><span>All of me</span></button>`
     : ''}</div>`;
 }

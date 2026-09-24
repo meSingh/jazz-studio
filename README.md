@@ -43,7 +43,7 @@ Dark by default and nothing girly, because that is what she asked for.
 | **My brand** | Her own logo in four styles, business cards and logo stickers. The logo goes on her diary cover and letter paper too |
 | **Play** | A poster of her name, secret messages in pigpen with a key for a friend, story sparks for when the diary page is blank, and a doodle pad |
 | **My makes** | Photos of everything she made, kept on the device |
-| **Make it yours** | Which pose says hello, which goes on her stationery, her name, seven letterings, twelve colour sets and any colour besides, her favourite pattern and the background |
+| **Make it yours** | Her character, or a family's own (see below), her name, seven letterings, twelve colour sets and any colour besides, her favourite pattern and the background |
 
 The colours are on a strip above the preview in every tool, so a colour is
 tried where it shows rather than in another room.
@@ -78,6 +78,15 @@ Six poses of the same girl, drawn from a photo of Jazz: smiling, waving,
 drawing, big idea, wink and cool. Each was rendered on flat magenta and cut out
 locally with `scripts/cutout.py`, which also takes the magenta light the render
 bounces onto her hair back out.
+
+### Your own character
+
+Other children can have their own. In Make it yours, **Add a character** takes
+a picture of a character on a plain colour (choose it, drop it, or paste it),
+cuts the background out in the browser with `src/cutout.ts`, finds the face,
+and keeps it on the device. Once a family adds any, theirs are the character
+list. A **For grown-ups** guide inside shows how to make one from a photo with
+Google Gemini, using the prompts that made Jazz's.
 
 **The character artwork is not covered by the code's licence.** It is a
 likeness of a real child. `src/assets/jazz/`, the icons in `public/`,

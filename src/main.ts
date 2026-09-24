@@ -11,7 +11,7 @@
 import './style.css';
 import { apply, look } from './look';
 import { defs, type PatternName } from './patterns';
-import { img, type PoseId } from './character';
+import { img, peekImg, either, loadOwn, setKeepJazz, type PoseId } from './character';
 import { ICONS } from './icons';
 import { esc, onRefresh, inSukhiPlay } from './ui';
 import { stationeryRoom } from './rooms/stationery';
@@ -74,7 +74,7 @@ function home (main: HTMLElement): void {
     return `<a class="tile" href="#/${r}" style="--tilt:${[-1.2, 1, -0.6, 0.9, -1, 0.7][i]}deg;--i:${i}">` +
       `<svg class="tile-art" viewBox="0 0 100 40" preserveAspectRatio="xMidYMid slice" aria-hidden="true">` +
       `<defs>${defs(`t-${r}`, t.pattern, l, 0.9)}</defs><rect width="100" height="40" fill="url(#t-${r})"/></svg>` +
-      `<span class="tile-peek">${img(t.pose, 'peek-img')}</span>` +
+      `<span class="tile-peek">${peekImg(either(t.pose, i))}</span>` +
       `<span class="tile-icon">${t.icon}</span>` +
       `<span class="tile-title">${t.title}</span><span class="tile-blurb">${t.blurb}</span></a>`;
   }).join('');
@@ -90,4 +90,7 @@ install();
 apply();
 onRefresh(() => render(true));
 window.addEventListener('hashchange', () => render());
-render();
+// A family's own characters are in IndexedDB; read them before the first
+// screen so it does not open on Jazz and then change.
+setKeepJazz(look().keepJazz);
+loadOwn().finally(render);

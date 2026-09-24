@@ -39,6 +39,8 @@ export interface Look {
   pose: PoseId;
   backdrop: Backdrop;
   brand: Brand;
+  /** Once a family has added their own characters, whether Jazz stays in the list too. */
+  keepJazz: boolean;
 }
 
 export interface Scheme {
@@ -104,6 +106,7 @@ const start = (): Look => {
     greeter: 'hello',
     pose: 'portrait',
     backdrop: 'stars',
+    keepJazz: false,
     brand: { name: 'Jazz Studio', tagline: 'Artist · Maker · Writer', style: 'badge', me: true }
   };
 };

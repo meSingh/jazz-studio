@@ -16,25 +16,34 @@ export interface Make {
 
 const DB = 'jazz-studio';
 const STORE = 'makes';
+/** Characters a family added themselves. Version 2 of the database added it. */
+const CHARACTERS = 'characters';
 
 function open (): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB, 1);
-    req.onupgradeneeded = () => { req.result.createObjectStore(STORE, { keyPath: 'id' }); };
+    const req = indexedDB.open(DB, 2);
+    // Each store only if it is missing, so a version 1 database keeps its makes.
+    req.onupgradeneeded = () => {
+      for (const name of [STORE, CHARACTERS]) {
+        if (!req.result.objectStoreNames.contains(name)) req.result.createObjectStore(name, { keyPath: 'id' });
+      }
+    };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });
 }
 
-async function run<T> (mode: IDBTransactionMode, work: (s: IDBObjectStore) => IDBRequest<T>): Promise<T> {
+export async function run<T> (mode: IDBTransactionMode, work: (s: IDBObjectStore) => IDBRequest<T>, store = STORE): Promise<T> {
   const db = await open();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE, mode);
-    const req = work(tx.objectStore(STORE));
+    const tx = db.transaction(store, mode);
+    const req = work(tx.objectStore(store));
     tx.oncomplete = () => { db.close(); resolve(req.result); };
     tx.onerror = () => { db.close(); reject(tx.error); };
   });
 }
+
+export { CHARACTERS };
 
 export async function all (): Promise<Make[]> {
   const list = await run('readonly', (s) => s.getAll() as IDBRequest<Make[]>);

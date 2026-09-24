@@ -3,7 +3,7 @@
  * pigpen, sparks for when the diary page is blank, and a doodle pad.
  */
 import { look } from '../look';
-import { img, type PoseId } from '../character';
+import { img, either, type PoseId } from '../character';
 import { posterSheet } from '../play/poster';
 import { secretSheet, layout, draw } from '../play/pigpen';
 import { spark } from '../play/sparks';
@@ -29,7 +29,7 @@ export function playRoom (main: HTMLElement, sub: string): void {
   if (sub === 'doodle') return doodle(main);
   main.innerHTML = `<div class="things">${PLAYTHINGS.map((t, i) =>
     `<a class="thing" href="#/play/${t.id}" style="--tilt:${[-1, 1, -0.6, 0.8][i]}deg">` +
-    `<span class="thing-art">${img(t.pose, 'thing-img')}</span>` +
+    `<span class="thing-art">${img(either(t.pose, i), 'thing-img')}</span>` +
     `<span class="thing-title">${t.title}</span><span class="thing-blurb">${t.blurb}</span></a>`).join('')}</div>`;
 }
 
@@ -111,7 +111,7 @@ let current = '';
 function sparks (main: HTMLElement): void {
   if (!current) current = spark();
   main.innerHTML = `<section class="spark">
-    <div class="spark-me">${img('idea', 'spark-img')}</div>
+    <div class="spark-me">${img(either('idea', 0), 'spark-img')}</div>
     <div class="spark-card">
       <p class="spark-label">Write about this</p>
       <p class="spark-text" aria-live="polite">${esc(current)}</p>

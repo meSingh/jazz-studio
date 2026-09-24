@@ -11,7 +11,7 @@
  */
 import { light, type Look } from './look';
 import { defs, type PatternName } from './patterns';
-import { face, figure, POSES, type PoseId } from './character';
+import { face, figure, poses, type PoseId } from './character';
 import { logo, fit } from './brand';
 
 export type Kind =
@@ -86,7 +86,7 @@ function hexagon (cx: number, cy: number, r: number): string {
 
 /** Which pose goes in slot `i`: the one she chose, or each in turn for a mix. */
 const poseAt = (o: Options, i: number): PoseId =>
-  o.pose === 'mix' ? POSES[i % POSES.length].id : o.pose;
+  o.pose === 'mix' ? poses()[i % poses().length].id : o.pose;
 
 /** A line that should measure exactly 5 cm, so a ruler can tell whether the printer shrank the page. */
 export function check (ink: string): string {
@@ -327,7 +327,7 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
           `<path d="M${cx} ${y} V${y + 13}" stroke="${ink}" stroke-width=".4" stroke-dasharray="2 1.6"/>` +
           `<text x="${cx}" y="${y + 88}" text-anchor="middle" font-size="7" font-weight="800" fill="${fg}" opacity=".85">${esc(look.name)}'s room</text>` +
           `<text x="${cx}" y="${y + 106}" text-anchor="middle" font-size="${fit(text, 76, 13)}" font-weight="900" fill="${fg}">${esc(text)}</text>`;
-        if (o.me) body += figure(o.pose === 'mix' ? POSES[(i + 1) % POSES.length].id : o.pose, x + 5, y + 118, 77, 152);
+        if (o.me) body += figure(o.pose === 'mix' ? poses()[(i + 1) % poses().length].id : o.pose, x + 5, y + 118, 77, 152);
         body += `<path d="${outline}" ${CUT} stroke="${ink}" opacity=".4"/>`;
       }
       return page(pat(1), body, 'Door sign');

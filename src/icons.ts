@@ -19,5 +19,10 @@ export const ICONS = {
   undo: icon('<path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/>'),
   star: icon('<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>'),
   play: icon('<circle cx="12" cy="12" r="9"/><path d="M10 8.5v7l6-3.5z"/>'),
+  up: icon('<path d="M12 19V5M6 11l6-6 6 6"/>'),
+  down: icon('<path d="M12 5v14M6 13l6 6 6-6"/>'),
+  bigger: icon('<circle cx="11" cy="11" r="7"/><path d="M11 8v6M8 11h6M16 16l4 4"/>'),
+  smaller: icon('<circle cx="11" cy="11" r="7"/><path d="M8 11h6M16 16l4 4"/>'),
+  person: icon('<circle cx="12" cy="8" r="4"/><path d="M4 21c1-5 4.5-7 8-7s7 2 8 7"/>'),
   scissors: icon('<circle cx="6" cy="7" r="3"/><circle cx="6" cy="17" r="3"/><path d="M8.5 8.5 20 18M8.5 15.5 20 6"/>')
 };

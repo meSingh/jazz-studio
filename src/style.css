@@ -18,6 +18,7 @@
   --heavy: 800;
   --radius: 20px;
   --line: color-mix(in srgb, var(--ink) 14%, transparent);
+  --backdrop-line: color-mix(in srgb, var(--ink) 16%, transparent);
   --shadow: 0 1px 2px rgb(0 0 0 / .25), 0 12px 30px -10px rgb(0 0 0 / .55);
   color-scheme: dark;
 }
@@ -42,6 +43,9 @@ body {
     var(--paper);
   background-attachment: fixed;
   -webkit-tap-highlight-color: transparent;
+  /* Its own stacking context, so the backdrop below (z-index -1) is painted
+     over the body's background rather than under it, where it was hidden. */
+  isolation: isolate;
 }
 
 /* Her backdrop, drawn with gradients rather than fetched. */
@@ -51,7 +55,7 @@ body::before {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  opacity: .5;
+  opacity: .85;
 }
 [data-backdrop="stars"] body::before {
   background-image:
@@ -64,12 +68,12 @@ body::before {
 }
 [data-backdrop="grid"] body::before {
   background-image:
-    linear-gradient(var(--line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    linear-gradient(var(--backdrop-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--backdrop-line) 1px, transparent 1px);
   background-size: 28px 28px;
 }
 [data-backdrop="dots"] body::before {
-  background-image: radial-gradient(circle, var(--line) 1.6px, transparent 2px);
+  background-image: radial-gradient(circle, var(--backdrop-line) 1.8px, transparent 2.2px);
   background-size: 22px 22px;
 }
 
@@ -200,8 +204,9 @@ img { display: block; max-width: 100%; }
   overflow: hidden;
   pointer-events: none;
 }
-.peek-img { width: 104px; height: auto; transform: translateY(0); transition: transform .3s cubic-bezier(.3, 1.5, .5, 1); }
-.tile:hover .peek-img { transform: translateY(-6px) rotate(-3deg); }
+.peek { position: relative; display: block; overflow: hidden; }
+.peek img { position: absolute; max-width: none; height: auto; transition: transform .3s cubic-bezier(.3, 1.5, .5, 1); }
+.tile:hover .peek img { transform: translateY(-6px) rotate(-3deg); }
 
 .tile-icon {
   position: relative;
@@ -432,9 +437,6 @@ img { display: block; max-width: 100%; }
 }
 .pose:hover { transform: translateY(-2px); }
 .pose[aria-checked="true"] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 22%, var(--card2)); }
-.pose-img { width: 64px; height: 56px; object-fit: cover; object-position: 50% 0; }
-.mix-stack { display: flex; width: 64px; height: 56px; overflow: hidden; }
-.mix-stack .pose-img { width: 34px; flex: none; margin-right: -12px; }
 
 /* Make from a box ------------------------------------------------ */
 
@@ -663,7 +665,6 @@ img { display: block; max-width: 100%; }
 .card { background: var(--card); border-radius: var(--radius); padding: 4px 20px 22px; box-shadow: var(--shadow); min-width: 0; }
 .card--wide { grid-column: 1 / -1; }
 .card .poses { grid-template-columns: repeat(6, minmax(0, 1fr)); margin-top: 8px; }
-.card .pose-img { width: 100%; height: auto; aspect-ratio: 5 / 4; }
 .card .colourbar { box-shadow: none; background: var(--card2); margin-top: 10px; }
 
 .schemes { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
@@ -727,6 +728,86 @@ img { display: block; max-width: 100%; }
 .lettering-name { font-size: 12px; opacity: .7; font-family: var(--lettering); font-weight: 700; }
 .lettering[aria-checked="true"] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, transparent); }
 
+/* Characters ------------------------------------------------------ */
+
+/* A face cropped out of a pose, the way a sticker frames it. */
+.face-crop { position: relative; display: block; overflow: hidden; aspect-ratio: 1; border-radius: 50%; background: var(--accent2); }
+.face-crop img { position: absolute; max-width: none; height: auto; }
+
+.pose .face-crop { width: 64px; margin: 2px auto; }
+.card .pose .face-crop { width: min(88px, 100%); }
+.mix-stack { display: flex; justify-content: center; width: 64px; margin: 2px auto; }
+.mix-stack .face-crop { width: 34px; flex: none; margin-right: -12px; border: 2px solid var(--card2); }
+
+.chars { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; }
+.char {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 12px 8px;
+  border-radius: 16px;
+  background: var(--card2);
+  font-size: 14px;
+  font-weight: 700;
+}
+.char-face { width: 88px; }
+.char-name {
+  width: 100%;
+  padding: 4px 8px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  text-align: center;
+  font-weight: 700;
+  font-size: 14px;
+}
+.char-name:hover, .char-name:focus { border-color: var(--line); outline: none; }
+.char-tools { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; }
+.mini {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 9px;
+  background: var(--card);
+}
+.mini svg { width: 16px; height: 16px; }
+.mini:hover { background: color-mix(in srgb, var(--accent) 30%, var(--card)); }
+.mini--bin[data-sure="yes"] { background: #c62f2f; color: #fff; }
+
+.char--add {
+  position: relative;
+  justify-content: center;
+  text-align: center;
+  border: 3px dashed var(--line);
+  background: transparent;
+  cursor: pointer;
+}
+.char--add[data-over="yes"], .char--add:hover { border-color: var(--accent); }
+.char--add input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.char-plus { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; background: var(--accent); color: var(--on-accent); }
+.char-plus svg { width: 24px; height: 24px; }
+.char--add small { font-weight: 500; opacity: .7; line-height: 1.3; }
+.char-status:empty { display: none; }
+
+.char-uses { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 8px; }
+.char-uses .poses { grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); }
+
+.guide { margin-top: 18px; padding: 4px 16px; border-radius: 14px; background: var(--card2); }
+.guide summary { display: flex; align-items: center; gap: 10px; padding: 10px 0; cursor: pointer; font-weight: 800; }
+.guide summary svg { width: 20px; height: 20px; color: var(--accent); }
+.guide ol { padding-left: 22px; }
+.guide li { margin: 10px 0; }
+.guide li::marker { font-weight: 800; color: var(--accent); }
+.prompt { position: relative; margin: 8px 0; padding: 12px 14px 8px; border-radius: 12px; background: var(--paper); font-size: 14px; }
+.prompt p { margin: 0 0 4px; user-select: all; }
+.prompt .copy { margin: 0; }
+.guide-note { font-size: 14px; opacity: .75; }
+
 /* Phones ----------------------------------------------------------- */
 
 @media (max-width: 820px) {
@@ -739,6 +820,7 @@ img { display: block; max-width: 100%; }
   .yours { grid-template-columns: 1fr; }
   .schemes { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .card .poses { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .char-uses { grid-template-columns: 1fr; }
   .colours { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .home-btn span { display: none; }
   .home-btn { padding: 10px; }
@@ -751,8 +833,7 @@ img { display: block; max-width: 100%; }
   .tile-title { font-size: 18px; margin: 10px 14px 2px; }
   .tile-blurb { display: none; }
   .tile-icon { margin-left: 14px; width: 48px; height: 48px; margin-top: -24px; }
-  .tile-peek { width: 80px; height: 62px; right: 4px; top: 30px; }
-  .peek-img { width: 80px; }
+  .tile-peek { right: 4px; top: 22px; transform: scale(.8); transform-origin: top right; }
   .tile-art { height: 90px; }
   .schemes { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .brand-fields { grid-template-columns: 1fr; }
