@@ -567,6 +567,20 @@ img { display: block; max-width: 100%; }
 .pose:hover { transform: translateY(-2px); }
 .pose[aria-checked="true"] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 22%, var(--card2)); }
 
+/* Who is on it: tick several, from anyone. */
+.who { display: grid; gap: 10px; }
+.who-name { display: block; margin: 2px 0 6px; font-size: 13px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; opacity: .75; }
+.who .pose { position: relative; }
+.who .pose > svg {
+  position: absolute; top: 4px; right: 4px; width: 20px; height: 20px; padding: 3px;
+  border-radius: 50%; background: var(--accent); color: var(--on-accent); display: none;
+}
+.who .pose[aria-pressed="true"] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 22%, var(--card2)); }
+.who .pose[aria-pressed="true"] > svg { display: block; }
+.who-all { justify-self: start; }
+.who-all[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+.who .hint { margin: 0; }
+
 /* Make from a box ------------------------------------------------ */
 
 .box-step { margin-bottom: 22px; }
@@ -825,6 +839,26 @@ img { display: block; max-width: 100%; }
 .yours { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
 .card { background: var(--card); border-radius: var(--radius); padding: 4px 20px 22px; box-shadow: var(--shadow); min-width: 0; }
 .card--wide { grid-column: 1 / -1; }
+
+/* Character and name: Jazz's and Sukhi's sets switched on or off, then everyone by person. */
+.charsets { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 16px 0 6px; }
+.charsets-say { flex-basis: 100%; font-size: 13px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; opacity: .75; }
+.charset {
+  position: relative; display: flex; align-items: center; gap: 10px; padding: 8px 16px 8px 8px;
+  border: 3px solid transparent; border-radius: 999px; background: var(--card2); cursor: pointer;
+}
+.charset input { position: absolute; opacity: 0; pointer-events: none; }
+.charset .face-crop { width: 44px; flex: none; }
+.charset > span:not(.face-crop) { display: grid; line-height: 1.15; }
+.charset small { font-size: 12px; opacity: .7; }
+.charset--on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 22%, var(--card2)); }
+.charset:has(input:disabled) { cursor: default; }
+.charset:has(input:focus-visible) { outline: 3px solid var(--accent2); outline-offset: 2px; }
+.person { margin-top: 18px; }
+.person-name { margin: 0 0 8px; font-size: 16px; font-weight: var(--heavy); }
+.person-name small { font-size: 14px; font-weight: 700; opacity: .7; margin-left: 4px; }
+.chars--add { margin-top: 18px; align-items: center; }
+.add-who { margin: 0; }
 .card .poses { grid-template-columns: repeat(6, minmax(0, 1fr)); margin-top: 8px; }
 .card .colourbar { box-shadow: none; background: var(--card2); margin-top: 10px; }
 
@@ -1329,4 +1363,43 @@ dialog.how { width: min(560px, calc(100vw - 32px)); }
      sheet change size as she turned it round. A fixed share of the width
      instead (see ui.ts). */
   .ipad-print .print-sheet svg { width: 90%; max-height: none; margin: 0 auto; }
+}
+
+/* The welcome ------------------------------------------------------ */
+
+.welcome { max-width: 520px; margin: 10px auto 30px; text-align: center; }
+.welcome--wide { max-width: 760px; }
+.welcome-step { margin: 0; font-size: 13px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.welcome-mark { display: block; width: 120px; height: 120px; margin: 10px auto 0; filter: drop-shadow(0 10px 18px rgb(0 0 0 / .25)); }
+.welcome h2 { margin: 12px 0 8px; font-size: clamp(28px, 6vw, 40px); font-weight: var(--heavy); line-height: 1.1; }
+.welcome-say { margin: 0 auto 18px; max-width: 460px; opacity: .85; }
+.welcome-form { display: grid; gap: 4px; text-align: left; }
+.welcome-form input { font-size: 22px; padding: 14px 16px; }
+.welcome-form .go { margin-top: 14px; }
+.welcome-skip { margin: 16px auto 0; }
+.welcome-picks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 6px; }
+.welcome-pick {
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 14px 10px 16px; border: 3px solid transparent; border-radius: var(--radius);
+  background: var(--card); box-shadow: var(--shadow); color: inherit; cursor: pointer;
+  transition: transform .15s, border-color .15s;
+}
+.welcome-pick:hover, .welcome-pick:focus-visible, .welcome-pick[data-over] { transform: translateY(-3px); border-color: var(--accent); }
+.welcome-pick b { font-size: 20px; font-weight: var(--heavy); }
+.welcome-pick small { font-size: 13px; opacity: .7; line-height: 1.3; }
+.welcome-pic { display: grid; place-items: end center; width: 100%; height: 150px; overflow: hidden; }
+.welcome-img { max-width: 100%; max-height: 150px; width: auto; height: auto; }
+.welcome-plus { place-items: center; }
+.welcome-plus svg { width: 64px; height: 64px; padding: 14px; border-radius: 50%; background: var(--accent); color: var(--on-accent); }
+.welcome-pick--own input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.welcome-more { margin: 18px 0 0; font-size: 15px; opacity: .85; }
+.welcome-more a { color: var(--accent); font-weight: 800; }
+@media (max-width: 480px) {
+  .welcome-picks { gap: 8px; }
+  .welcome-pick { padding: 10px 4px 12px; }
+  .welcome-pic { height: 96px; }
+  .welcome-img { max-height: 96px; }
+  .welcome-pick b { font-size: 16px; }
+  .welcome-pick small { font-size: 11.5px; }
+  .welcome-plus svg { width: 48px; height: 48px; padding: 10px; }
 }

@@ -41,7 +41,7 @@ Dark by default and nothing girly, because that is what she asked for.
 | **Stationery** | Five groups: stickers (of her character, or in her pattern), a diary (cover and pages), labels and gift tags, planners and to-do lists, bookmarks and door signs |
 | **Make from a box** | Measure a toilet roll, a cereal box or a lid, and print a wrap that fits it, with the steps to make a pencil pot, a desk tidy, a notebook cover or a treasure box |
 | **My brand** | Her own logo in four styles, business cards and logo stickers. The logo goes on her diary cover too |
-| **Play** | A poster of her name, secret messages in pigpen with a key for a friend, story sparks for when the diary page is blank, and a doodle pad |
+| **Play** | A poster of her name, secret messages in pigpen with a key for a friend, story sparks for when the diary page is blank, a doodle pad, and invite cards with a code a friend's camera opens the studio from |
 | **My makes** | Her prints, kept to print again or change first, and photos of everything she made, all on the device |
 | **Make it yours** | Her character, or a family's own (see below), her name, seven letterings, twelve colour sets and any colour besides, her favourite pattern and the background |
 
@@ -88,19 +88,33 @@ drawing, big idea, wink and cool. Each was rendered on flat magenta and cut out
 locally with `scripts/cutout.py`, which also takes the magenta light the render
 bounces onto her hair back out.
 
-### Your own character
+### Sukhi
 
-Other children can have their own. In Make it yours, **Add a character** takes
-a picture of a character on a plain colour (choose it, drop it, or paste it),
-cuts the background out in the browser with `src/cutout.ts`, finds the face,
-and keeps it on the device. Once a family adds any, theirs are the character
-list. A **For grown-ups** guide inside shows how to make one from a photo with
-Google Gemini, using the prompts that made Jazz's.
+Her little brother, the Sukhi Play mascot, in seven: smiling, big grin,
+laughing, silly, thinking, proud and painting. Taken from his model sheet and
+cut out on the computer with the macOS Vision framework. His set is switched on
+in Make it yours, so she can make things for him too.
+
+### Your own character, and friends
+
+The first time the studio opens it asks for a name and a character: Jazz,
+Sukhi, or their own. Their own comes the same way as in Make it yours, where
+**Add a character** takes a picture of a character on a plain colour (choose
+it, drop it, or paste it), cuts the background out in the browser with
+`src/cutout.ts`, finds the face, and keeps it on the device. A **For grown-ups**
+guide inside shows how to make one from a photo with Google Gemini, using the
+prompts that made Jazz's.
+
+Every character belongs to a person. One given a friend's name is that
+friend's, and on a sheet with several places (stickers, labels, bookmarks,
+gift tags, door signs) she can tick anyone: each goes on with their own name,
+and a gift tag with a friend's face on it is to that friend.
 
 **The character artwork is not covered by the code's licence.** It is a
-likeness of a real child. `src/assets/jazz/`, the icons in `public/`,
-`scripts/icon-1024.png` and `media/` are © Mandeep Singh, all rights
-reserved, and may not be reused, modified or redistributed.
+likeness of real children. `src/assets/jazz/`, `src/assets/sukhi/`, the icons
+and the brand mark in `public/`, `scripts/icon-1024.png` and `media/` are ©
+Mandeep Singh, all rights reserved, and may not be reused, modified or
+redistributed.
 
 ## Building it
 

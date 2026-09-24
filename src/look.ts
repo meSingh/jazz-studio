@@ -44,8 +44,16 @@ export interface Look {
   pose: PoseId;
   backdrop: Backdrop;
   brand: Brand;
-  /** Once a family has added their own characters, whether Jazz stays in the list too. */
+  /**
+   * Which ready-made characters are in the list, besides any a family added:
+   * Jazz's and Sukhi's. Absent in a look from before Sukhi, when it is worked
+   * out from keepJazz (see character.ts).
+   */
+  sets?: { jazz: boolean; sukhi: boolean };
+  /** From before Sukhi: once a family had added their own, whether Jazz stayed in the list too. */
   keepJazz: boolean;
+  /** Whether the welcome, which asks their name and character, has been seen. */
+  welcomed: boolean;
 }
 
 export interface Scheme {
@@ -102,19 +110,27 @@ export const BACKDROPS: Array<{ id: Backdrop; label: string }> = [
 
 const KEY = 'jazz-studio-look';
 
+/**
+ * A new studio: Arctic, with the Glow background, which is what Jazz chose.
+ * No name until the welcome asks for one, so nobody else is greeted as Jazz.
+ */
 const start = (): Look => {
-  const s = SCHEMES[0];
+  const s = SCHEMES.find((x) => x.id === 'arctic')!;
   return {
-    name: 'Jazz',
+    name: '',
     paper: s.paper, ink: s.ink, accent: s.accent, accent2: s.accent2, scheme: s.id,
     lettering: 'rounded',
     pattern: 'zigzag',
     pose: 'hello',
-    backdrop: 'waves',
+    backdrop: 'glow',
     keepJazz: false,
-    brand: { name: 'Jazz Studio', tagline: 'Artist · Maker · Writer', style: 'badge', me: true }
+    welcomed: false,
+    brand: { name: 'My Studio', tagline: 'Artist · Maker · Writer', style: 'badge', me: true }
   };
 };
+
+/** "Jazz's", or "My" for someone who has not said their name: for "…'s Diary" and the like. */
+export const whose = (name: string): string => (name.trim() ? `${name.trim()}'s` : 'My');
 
 let current: Look = load();
 
@@ -124,7 +140,12 @@ function load (): Look {
     if (raw) {
       const saved = JSON.parse(raw) as Partial<Look>;
       const base = start();
-      const merged = { ...base, ...saved, brand: { ...base.brand, ...(saved.brand ?? {}) } };
+      // A look saved before the welcome existed belongs to someone already
+      // using the studio, Jazz first among them: they are not asked again.
+      // Before names could be left out, a missing one meant Jazz.
+      const older = { welcomed: true, name: 'Jazz', brand: { ...base.brand, name: 'Jazz Studio' } };
+      const was = 'welcomed' in saved ? base : { ...base, ...older };
+      const merged = { ...was, ...saved, brand: { ...was.brand, ...(saved.brand ?? {}) } };
       // A lettering from an older version that no longer exists falls back.
       if (!(merged.lettering in LETTERING)) merged.lettering = base.lettering;
       // A background that has since been replaced falls back to stars.

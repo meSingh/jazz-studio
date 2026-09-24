@@ -75,7 +75,7 @@ function lookTab (main: HTMLElement, nav: string): void {
       <p class="hint">How your name and your words look, on the screen and on everything you print.</p>
       <div class="letterings" role="radiogroup" aria-label="Lettering">${(Object.keys(LETTERING) as Lettering[]).map((k) =>
         `<button type="button" class="lettering" role="radio" data-lettering="${k}" aria-checked="${k === l.lettering}" style="font-family:${LETTERING[k].stack.replace(/"/g, "'")};font-weight:${LETTERING[k].weight}">` +
-        `<span class="lettering-sample">${esc(l.name)}</span><span class="lettering-name">${LETTERING[k].label}</span></button>`).join('')}</div>
+        `<span class="lettering-sample">${esc(l.name.trim() || 'Your name')}</span><span class="lettering-name">${LETTERING[k].label}</span></button>`).join('')}</div>
     </section>
 
     <section class="card look-part">
@@ -129,14 +129,14 @@ function aboutTab (main: HTMLElement, nav: string): void {
 
 /** What Start again puts back, and what it leaves alone. Said here and in the question. */
 const GOES_BACK = [
-  'Your name, back to Jazz',
-  'Which character is yours',
+  'Your name and your character: the studio asks for them again, like the first time',
+  'Which characters are in the list',
   'The studio\'s colours, lettering and background',
   'Your logo: its name, words and style'
 ];
 const KEPT = [
   'Everything in My makes, and your doodles',
-  'Your own characters',
+  'Your own characters and your friends\'',
   'What you last made in each tool'
 ];
 

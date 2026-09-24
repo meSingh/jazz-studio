@@ -5,6 +5,7 @@
 import { look } from '../look';
 import { img, either, type PoseId } from '../character';
 import { posterSheet } from '../play/poster';
+import { inviteSheet } from '../play/invite';
 import { secretSheet, layout, draw } from '../play/pigpen';
 import { spark } from '../play/sparks';
 import { save } from '../makes';
@@ -20,7 +21,8 @@ export const PLAYTHINGS: Array<{ id: string; title: string; blurb: string; pose:
   { id: 'poster', title: 'Name poster', blurb: 'Your name, huge, in your pattern', pose: 'cool' },
   { id: 'secret', title: 'Secret codes', blurb: 'Write in a code only friends can read', pose: 'wink' },
   { id: 'sparks', title: 'Story sparks', blurb: 'Something to write about, at the tap of a button', pose: 'idea' },
-  { id: 'doodle', title: 'Doodle pad', blurb: 'Draw in your colours and keep it', pose: 'draw' }
+  { id: 'doodle', title: 'Doodle pad', blurb: 'Draw in your colours and keep it', pose: 'draw' },
+  { id: 'invite', title: 'Invite a friend', blurb: 'Cards with a code to scan, so friends can make things too', pose: 'hello' }
 ];
 
 export function playRoom (main: HTMLElement, sub: string): void {
@@ -28,6 +30,7 @@ export function playRoom (main: HTMLElement, sub: string): void {
   if (sub === 'secret') return secret(main);
   if (sub === 'sparks') return sparks(main);
   if (sub === 'doodle') return doodle(main);
+  if (sub === 'invite') return invite(main);
   main.innerHTML = `<div class="things">${PLAYTHINGS.map((t, i) =>
     `<a class="thing" href="#/play/${t.id}" style="--tilt:${[-1, 1, -0.6, 0.8][i]}deg">` +
     `<span class="thing-art">${img(either(t.pose, i), 'thing-img')}</span>` +
@@ -49,7 +52,7 @@ function poster (main: HTMLElement): void {
   main.innerHTML = `<div class="workbench">
     <section class="controls">
       ${heading('Words')}
-      ${field('Big letters', `<input class="p-name" maxlength="12" placeholder="${esc(l.name)}" value="${esc(s.name)}">`)}
+      ${field('Big letters', `<input class="p-name" maxlength="12" placeholder="${esc(l.name.trim() || 'Your name')}" value="${esc(s.name)}">`)}
       ${field('A line underneath (or leave empty)', `<input class="p-line" maxlength="40" value="${esc(s.line)}">`)}
       ${heading('Which you')}
       ${posePicker(s.pose, false)}
@@ -85,7 +88,61 @@ register('poster', {
     posterState.set({ ...(k.settings as unknown as PosterSettings), design: k.design });
     location.hash = '#/play/poster';
   },
-  name: (k) => `Name poster: ${(k.settings as unknown as PosterSettings).name || look().name}`
+  name: (k) => `Name poster: ${(k.settings as unknown as PosterSettings).name || look().name || 'Hello'}`
+});
+
+/* Invite a friend ---------------------------------------------------------- */
+
+interface InviteSettings { words: string; pose: PoseId | ''; from: string | null }
+
+const inviteState = remembered<InviteSettings & { design?: Design }>('jazz-studio-invite', { words: '', pose: '', from: null });
+const inviteDesign = sheetDesign(() => inviteState.get().design, (d) => inviteState.set({ design: d }));
+/** Who the cards are from: what she typed, or her name until she types something. */
+const fromOf = (s: InviteSettings): string => s.from ?? look().name;
+
+function invite (main: HTMLElement): void {
+  const s = inviteState.get();
+
+  const draw = (): string => {
+    const now = inviteState.get();
+    return inviteSheet(now.words, now.pose || look().pose, fromOf(now), inviteDesign.get());
+  };
+  main.innerHTML = `<div class="workbench">
+    <section class="controls">
+      <p class="hint">Eight cards to cut out and give to friends. Their phone or tablet camera opens the studio from the code, and it is free for them too.</p>
+      ${heading('Words on top')}
+      ${field('What the cards say', `<input class="i-words" maxlength="40" placeholder="Come and make things with me!" value="${esc(s.words)}">`)}
+      ${field('From', `<input class="i-from" maxlength="20" placeholder="Your name" value="${esc(fromOf(s))}">`)}
+      ${heading('In the middle of the code')}
+      ${posePicker(s.pose || look().pose, false)}
+      ${heading('Pattern')}
+      ${patternPicker(inviteDesign)}
+    </section>
+    <section class="preview">${colourBar(inviteDesign)}<div class="print-area">${draw()}</div>${printButton('Print the cards')}</section>
+  </div>`;
+  const redraw = (): void => { main.querySelector('.print-area')!.innerHTML = draw(); };
+  main.querySelector<HTMLInputElement>('.i-words')!.addEventListener('input', (e) => { inviteState.set({ words: (e.target as HTMLInputElement).value }); redraw(); });
+  main.querySelector<HTMLInputElement>('.i-from')!.addEventListener('input', (e) => { inviteState.set({ from: (e.target as HTMLInputElement).value }); redraw(); });
+  wireChoice(main, 'pose', (p) => { inviteState.set({ pose: p as PoseId }); refresh(); });
+  wirePatterns(main, inviteDesign);
+  wireColours(main, inviteDesign);
+  wirePrint(main);
+  showing(() => {
+    const now = inviteState.get();
+    return { tool: 'invite', settings: { words: now.words, pose: now.pose || look().pose, from: fromOf(now) }, design: designOf(inviteDesign.get()) };
+  });
+}
+
+register('invite', {
+  draw: (k, l) => {
+    const s = k.settings as unknown as InviteSettings;
+    return inviteSheet(s.words, s.pose || l.pose, s.from ?? '', l);
+  },
+  open: (k) => {
+    inviteState.set({ ...(k.settings as unknown as InviteSettings), design: k.design });
+    location.hash = '#/play/invite';
+  },
+  name: () => 'Invite cards'
 });
 
 /* Secret codes ----------------------------------------------------------- */

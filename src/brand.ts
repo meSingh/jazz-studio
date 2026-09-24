@@ -35,7 +35,7 @@ export function logo (look: Look, x: number, y: number, size: number): string {
   const u = size / 100;
   // The face itself comes from the surrounding <svg>'s style: var() does not work in an attribute.
   const font = 'font-weight="800"';
-  const initial = esc((look.name.trim()[0] ?? 'J').toUpperCase());
+  const initial = esc(((look.name.trim() || look.brand.name.trim())[0] ?? 'S').toUpperCase());
   const inner = (cx: number, cy: number, r: number): string => b.me
     ? `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${look.accent2}"/>${face(b.pose ?? look.pose, cx, cy, r * 0.94, `${id}f`)}`
     : `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${look.accent2}"/>` +

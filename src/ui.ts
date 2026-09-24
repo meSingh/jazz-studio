@@ -9,7 +9,8 @@
  */
 import { look, setLook, SCHEMES, PALETTE, LETTERING, type Lettering, type Look } from './look';
 import { PATTERNS, defs, type PatternName } from './patterns';
-import { poses, faceImg, type PoseId } from './character';
+import { poses, people, faceImg, type PoseId } from './character';
+import type { Who } from './sheets';
 import { ICONS } from './icons';
 
 export const esc = (s: string): string =>
@@ -265,12 +266,54 @@ export function wirePatterns (root: HTMLElement, target: DesignTarget): void {
 
 export function posePicker (current: PoseId | 'mix', mix: boolean, attr = 'pose'): string {
   const list = poses();
+  const groups = people(look());
+  // With more than one person, each has their own row and name, so Jazz's
+  // Smiling and Sukhi's Smiling are not two of the same.
+  if (groups.length > 1 && !mix) {
+    return `<div class="who">${groups.map((g) => `<div class="who-person"><span class="who-name">${esc(g.name)}</span>` +
+      `<div class="poses" role="radiogroup" aria-label="${esc(g.name)}">${g.poses.map((p) =>
+        `<button type="button" class="pose" role="radio" data-${attr}="${p.id}" aria-checked="${p.id === current}" title="${esc(p.label || g.name)}">` +
+        `${faceImg(p.id, 'pose-img')}<span>${esc(p.label || g.name)}</span></button>`).join('')}</div></div>`).join('')}</div>`;
+  }
   return `<div class="poses" role="radiogroup" aria-label="Which you">${list.map((p) =>
     `<button type="button" class="pose" role="radio" data-${attr}="${p.id}" aria-checked="${p.id === current}" title="${p.label}">` +
     `${faceImg(p.id, 'pose-img')}<span>${esc(p.label)}</span></button>`).join('')}${mix && list.length > 1
     ? `<button type="button" class="pose pose--mix" role="radio" data-${attr}="mix" aria-checked="${current === 'mix'}">` +
       `<span class="mix-stack">${list.slice(0, 3).map((p) => faceImg(p.id, 'mix-face')).join('')}</span><span>All of me</span></button>`
     : ''}</div>`;
+}
+
+/**
+ * Who is on a sheet with several places: any of the characters, from anyone,
+ * ticked in any number, grouped by person; or Everyone. A sheet goes through
+ * the ticked ones in turn, each with their own name (see sheets.ts).
+ */
+export function whoPicker (current: Who): string {
+  const all = current === 'mix';
+  const ticked = new Set(all ? [] : Array.isArray(current) ? current : [current]);
+  const groups = people(look());
+  return `<div class="who">${groups.map((g) => `<div class="who-person">
+      ${groups.length > 1 ? `<span class="who-name">${esc(g.name)}</span>` : ''}
+      <div class="poses">${g.poses.map((p) =>
+        `<button type="button" class="pose" data-who="${p.id}" aria-pressed="${all || ticked.has(p.id)}" title="${esc(p.label || g.name)}">` +
+        `${faceImg(p.id, 'pose-img')}<span>${esc(p.label || g.name)}</span>${ICONS.tick}</button>`).join('')}</div>
+    </div>`).join('')}
+    <button type="button" class="chip who-all" data-who="mix" aria-pressed="${all}">Everyone, in turn</button>
+    <p class="hint">Tick as many as you like, from anyone. Each one goes on with their own name.</p>
+  </div>`;
+}
+
+/** What a tap in whoPicker makes the choice: one more or one fewer ticked, or everyone. */
+export function toggleWho (current: Who, id: string): Who {
+  if (id === 'mix') return 'mix';
+  // From everyone, a tap takes that one out and leaves the rest ticked.
+  const list = current === 'mix' ? poses().map((p) => p.id) : Array.isArray(current) ? [...current] : [current];
+  const at = list.indexOf(id);
+  if (at >= 0) {
+    // The last one stays: a sheet with nobody on it is not a choice.
+    if (list.length > 1) list.splice(at, 1);
+  } else list.push(id);
+  return list.length === 1 ? list[0] : list;
 }
 
 /* Asking first ------------------------------------------------------------ */

@@ -10,11 +10,11 @@
  * lettering and pattern. Those live here, in the tool, and change only that
  * sheet; a sheet with none of its own follows the studio's look.
  */
-import { sheet, type Kind, type KindInfo, type Options } from '../sheets';
+import { sheet, firstOf, type Kind, type KindInfo, type Options, type Who } from '../sheets';
 import type { PoseId } from '../character';
 import {
   esc, field, heading, printButton, wirePrint, wireChoice, colourBar, wireColours,
-  patternPicker, wirePatterns, posePicker, refresh, remembered, scoped, sheetDesign,
+  patternPicker, wirePatterns, posePicker, whoPicker, toggleWho, refresh, remembered, scoped, sheetDesign,
   type Design, type DesignTarget
 } from '../ui';
 import { showing, designOf } from '../prints';
@@ -22,7 +22,7 @@ import { showing, designOf } from '../prints';
 export interface BenchState {
   kind: Kind;
   me: boolean;
-  pose: PoseId | 'mix';
+  pose: Who;
   words: Partial<Record<Kind, string>>;
   /** Each sheet's own colours, lettering and pattern, where it has any. */
   designs?: Partial<Record<Kind, Design>>;
@@ -39,7 +39,7 @@ export function designFor (state: Bench, kind: Kind): DesignTarget {
 }
 
 /** What a bench keeps in My makes for one sheet (see prints.ts). */
-export interface SheetSettings { kind: Kind; me: boolean; pose: PoseId | 'mix'; words: string }
+export interface SheetSettings { kind: Kind; me: boolean; pose: Who; words: string }
 
 /** Puts a bench back to a kept sheet: that sheet chosen, with its words and design. */
 export function reopen (state: Bench, s: SheetSettings, design: Design): void {
@@ -81,7 +81,11 @@ export function bench (main: HTMLElement, kinds: KindInfo[], state: Bench, tool:
         ? heading('Which one') + `<div class="sheet-options" role="radiogroup" aria-label="Which one">${kinds.map(optionFor).join('')}</div>`
         : `<p class="hint">${kind.blurb}</p>`}
       ${kind.me ? `<label class="tick"><input type="checkbox" class="me" ${s.me ? 'checked' : ''}><span>Put me on it</span></label>` : ''}
-      ${kind.pose || (kind.me && s.me) ? heading('Which you') + posePicker(s.pose === 'mix' && kind.id !== 'faces' ? l.pose : s.pose, kind.id === 'faces') : ''}
+      ${kind.pose || (kind.me && s.me)
+        ? kind.many
+          ? heading('Who is on it') + whoPicker(s.pose)
+          : heading('Which you') + posePicker(firstOf(s.pose, l), false)
+        : ''}
       ${heading('Pattern')}
       ${patternPicker(design)}
       ${kind.words ? heading('Words') + field(kind.words, `<input class="words" maxlength="40" placeholder="${esc(kind.start(l))}" value="${esc(s.words[kind.id] ?? '')}">`) : ''}
@@ -94,7 +98,8 @@ export function bench (main: HTMLElement, kinds: KindInfo[], state: Bench, tool:
   </div>`;
 
   wireChoice(main, 'kind', (k) => { state.set({ kind: k as Kind }); refresh(); });
-  wireChoice(main, 'pose', (p) => { state.set({ pose: p as PoseId | 'mix' }); refresh(); });
+  wireChoice(main, 'pose', (p) => { state.set({ pose: p as PoseId }); refresh(); });
+  wireChoice(main, 'who', (id) => { state.set({ pose: toggleWho(state.get().pose, id) }); refresh(); });
   wirePatterns(main, design);
   wireColours(main, design);
   main.querySelector<HTMLInputElement>('.me')?.addEventListener('change', (e) => {

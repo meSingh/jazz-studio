@@ -9,9 +9,9 @@
  * Her character, her logo, her pattern and her colours go on as much of it as
  * makes sense. It is her stationery; it should look like nobody else's.
  */
-import { light, fontOf, type Look } from './look';
+import { light, fontOf, whose, type Look } from './look';
 import { defs, type PatternName } from './patterns';
-import { face, figure, poses, type PoseId } from './character';
+import { face, figure, poses, nameFor, type PoseId } from './character';
 import { logo, fit } from './brand';
 
 export type Kind =
@@ -23,8 +23,14 @@ export interface Options {
   words: string;
   /** Put her character on it, where the sheet has room for her. */
   me: boolean;
-  pose: PoseId | 'mix';
+  /**
+   * Who is on it: one character, everyone in the list ('mix'), or the ones
+   * she ticked, which a sheet with several places goes through in turn.
+   */
+  pose: Who;
 }
+
+export type Who = PoseId | 'mix' | PoseId[];
 
 export interface KindInfo {
   id: Kind;
@@ -35,19 +41,21 @@ export interface KindInfo {
   start: (look: Look) => string;
   me: boolean;
   pose: boolean;
+  /** Has several places for a character, so she can tick several people. */
+  many?: boolean;
 }
 
 export const KINDS: KindInfo[] = [
-  { id: 'faces', label: 'Me stickers', blurb: 'Your character on stickers. Print on sticker paper', words: 'Name under each one (or leave empty)', start: () => '', me: false, pose: true },
+  { id: 'faces', label: 'Me stickers', blurb: 'Your character on stickers. Print on sticker paper', words: 'Name under each one (or leave empty)', start: () => '', me: false, pose: true, many: true },
   { id: 'stickers', label: 'Pattern stickers', blurb: 'Circles, squares and hexagons to cut out', words: 'What should they say?', start: (l) => l.name, me: false, pose: false },
-  { id: 'labels', label: 'Name labels', blurb: 'For books, boxes and pencil cases', words: 'Name on the labels', start: (l) => l.name, me: true, pose: false },
-  { id: 'bookmarks', label: 'Bookmarks', blurb: 'Four to a page. Thick paper works best', words: 'Words down the middle', start: (l) => l.name, me: true, pose: false },
-  { id: 'cover', label: 'Diary cover', blurb: 'The front of your diary, with you on it', words: 'Title on the cover', start: (l) => `${l.name}'s Diary`, me: false, pose: true },
+  { id: 'labels', label: 'Name labels', blurb: 'For books, boxes and pencil cases', words: 'Name on the labels', start: (l) => l.name || 'Each person\'s name', me: true, pose: false, many: true },
+  { id: 'bookmarks', label: 'Bookmarks', blurb: 'Four to a page. Thick paper works best', words: 'Words down the middle', start: (l) => l.name || 'Each person\'s name', me: true, pose: false, many: true },
+  { id: 'cover', label: 'Diary cover', blurb: 'The front of your diary, with you on it', words: 'Title on the cover', start: (l) => `${whose(l.name)} Diary`, me: false, pose: true },
   { id: 'diary', label: 'Diary page', blurb: 'Date, mood and lines, with your name at the top', words: 'Something to write about (or leave empty)', start: () => '', me: true, pose: false },
-  { id: 'planner', label: 'Week planner', blurb: 'Every day of the week, and a goal', words: 'Title', start: (l) => `${l.name}'s Week`, me: true, pose: false },
+  { id: 'planner', label: 'Week planner', blurb: 'Every day of the week, and a goal', words: 'Title', start: (l) => `${whose(l.name)} Week`, me: true, pose: false },
   { id: 'todo', label: 'To-do lists', blurb: 'Two lists to a page, with boxes to tick', words: 'Title', start: () => 'Things to do', me: true, pose: false },
-  { id: 'tags', label: 'Gift tags', blurb: 'Eight tags. Punch a hole and add ribbon', words: 'From', start: (l) => l.name, me: true, pose: false },
-  { id: 'door', label: 'Door sign', blurb: 'Two hangers for your door handle', words: 'What the sign says', start: () => 'Knock first!', me: true, pose: true }
+  { id: 'tags', label: 'Gift tags', blurb: 'Eight tags. Punch a hole and add ribbon. Tick friends to put them on as who it is to', words: 'From', start: (l) => l.name, me: true, pose: false, many: true },
+  { id: 'door', label: 'Door sign', blurb: 'Two hangers for your door handle', words: 'What the sign says', start: () => 'Knock first!', me: true, pose: true, many: true }
 ];
 
 /**
@@ -104,9 +112,15 @@ function hexagon (cx: number, cy: number, r: number): string {
   }).join(' L') + 'Z';
 }
 
-/** Which pose goes in slot `i`: the one she chose, or each in turn for a mix. */
-const poseAt = (o: Options, i: number): PoseId =>
-  o.pose === 'mix' ? poses()[i % poses().length].id : o.pose;
+/** Which pose goes in place `i`: the one she chose, or each in turn of the ones she ticked, or of everyone. */
+const poseAt = (o: Options, i: number): PoseId => {
+  const list = o.pose === 'mix' ? poses().map((p) => p.id) : Array.isArray(o.pose) ? o.pose : [o.pose];
+  return list.length ? list[i % list.length] : poses()[0].id;
+};
+
+/** The one character on a sheet with room for one: the first she ticked, or her own for "everyone". */
+export const firstOf = (who: Who, look: Look): PoseId =>
+  who === 'mix' ? look.pose : Array.isArray(who) ? (who[0] ?? look.pose) : who;
 
 /**
  * A line that should measure exactly 5 cm, so a ruler can tell whether the
@@ -146,8 +160,10 @@ export const disc = (pose: PoseId, look: Look, cx: number, cy: number, r: number
 export function sheet (kind: Kind, o: Options, look: Look): string {
   const w = o.words.trim();
   const ink = inkOf(look);
-  // The character picked in this tool; "All of me" only means something on the Me stickers.
-  const me = o.pose === 'mix' ? look.pose : o.pose;
+  // The character on a sheet with room for one. A sheet with several places
+  // goes through everyone she ticked (poseAt), each with their own name.
+  const me = firstOf(o.pose, look);
+  const nameAt = (i: number): string => nameFor(poseAt(o, i), look);
   const font = fontOf(look);
   const pat = (scale: number): string => defs('p1', o.pattern, look, scale) + defs('p2', o.pattern, swap(look), scale);
 
@@ -202,16 +218,16 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
 
     case 'bookmarks': {
       let body = '';
-      const text = w || look.name;
       for (let i = 0; i < 4; i++) {
         const x = 15 + i * 47;
         const y = 30;
+        const text = w || (o.me ? nameAt(i) : look.name);
         const size = fit(text, 104, 13);
         body += `<rect x="${x}" y="${y}" width="40" height="196" rx="4" fill="url(#${i % 2 ? 'p2' : 'p1'})"/>` +
           `<rect x="${x + 6}" y="${y + 48}" width="28" height="136" rx="3" fill="#fff" opacity=".94"/>` +
           `<text transform="translate(${x + 20 + size * 0.35} ${y + 116}) rotate(-90)" text-anchor="middle" font-size="${size}" font-weight="800" fill="${ink}">${esc(text)}</text>`;
         body += o.me
-          ? `<circle cx="${x + 20}" cy="${y + 24}" r="15" fill="#fff"/>` + disc(me, look, x + 20, y + 24, 13.5, `b${i}`)
+          ? `<circle cx="${x + 20}" cy="${y + 24}" r="15" fill="#fff"/>` + disc(poseAt(o, i), look, x + 20, y + 24, 13.5, `b${i}`)
           : `<circle cx="${x + 20}" cy="${y + 14}" r="3" fill="#fff" stroke="${ink}" stroke-width=".4"/>`;
         body += `<rect x="${x - 1.5}" y="${y - 1.5}" width="43" height="199" rx="5" ${CUT} stroke="${ink}" opacity=".35"/>`;
       }
@@ -220,16 +236,17 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
 
     case 'labels': {
       let body = '';
-      const text = w || look.name;
       for (let row = 0; row < 7; row++) {
         for (let col = 0; col < 2; col++) {
           const x = 15 + col * 95;
           const y = 16 + row * 37;
+          // Two to a row, so each person she ticked gets a row of their own.
           const i = row * 2 + col;
+          const text = w || (o.me ? nameAt(row) : look.name);
           const size = fit(text, 50, 11);
           body += `<rect x="${x}" y="${y}" width="85" height="31" rx="5" fill="#fff" stroke="${look.accent}" stroke-width=".8"/>` +
             `<path d="M${x + 5} ${y} H${x + 26} V${y + 31} H${x + 5} A5 5 0 0 1 ${x} ${y + 26} V${y + 5} A5 5 0 0 1 ${x + 5} ${y}Z" fill="url(#${i % 2 ? 'p2' : 'p1'})"/>`;
-          if (o.me) body += disc(me, look, x + 13, y + 15.5, 11, `l${i}`);
+          if (o.me) body += disc(poseAt(o, row), look, x + 13, y + 15.5, 11, `l${i}`);
           body += `<text x="${x + 31}" y="${y + 10.5}" font-size="3.8" fill="${ink}" opacity=".7">This belongs to</text>` +
             `<text x="${x + 31}" y="${y + 23}" font-size="${size}" font-weight="800" fill="${ink}">${esc(text)}</text>` +
             `<rect x="${x - 1.5}" y="${y - 1.5}" width="88" height="34" rx="6" ${CUT} stroke="${ink}" opacity=".35"/>`;
@@ -239,7 +256,7 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
     }
 
     case 'cover': {
-      const title = w || `${look.name}'s Diary`;
+      const title = w || `${whose(nameFor(me, look))} Diary`;
       const size = fit(title, 150, 20);
       const year = new Date().getFullYear();
       const body = `<rect x="10" y="10" width="190" height="277" rx="8" fill="url(#p1)"/>` +
@@ -265,7 +282,7 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
       let body = `<rect x="10" y="10" width="10" height="277" rx="3" fill="url(#p1)"/>`;
       if (o.me) body += disc(me, look, 36, 28, 10.5, 'd1');
       const tx = o.me ? 51 : 30;
-      body += `<text x="${tx}" y="27" font-size="10" font-weight="900" fill="${ink}">${esc(look.name)}'s Diary</text>` +
+      body += `<text x="${tx}" y="27" font-size="10" font-weight="900" fill="${ink}">${esc(whose(o.me ? nameFor(me, look) : look.name))} Diary</text>` +
         `<text x="${tx}" y="34.5" font-size="4" fill="${look.accent}" font-weight="700" letter-spacing=".6">${esc(look.brand.tagline.toUpperCase())}</text>` +
         `<text x="140" y="27" font-size="4.5" fill="${ink}" opacity=".7">Date</text><path d="M151 27.5 H192" stroke="${ink}" stroke-width=".4" opacity=".5"/>` +
         `<path d="M30 42 H192" stroke="${look.accent}" stroke-width="1"/>` +
@@ -280,7 +297,7 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
     }
 
     case 'planner': {
-      const title = w || `${look.name}'s Week`;
+      const title = w || `${whose(o.me ? nameFor(me, look) : look.name)} Week`;
       let body = `<rect x="10" y="10" width="190" height="8" rx="3" fill="url(#p1)"/>`;
       if (o.me) body += disc(me, look, 24, 33, 10, 'pl');
       const tx = o.me ? 38 : 15;
@@ -330,9 +347,14 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
         body += `<path d="${shape}" fill="#fff" stroke="${look.accent}" stroke-width=".8"/>` +
           `<path d="M${x + 12} ${y} H${x + 34} V${y + 60} H${x + 12} L${x} ${y + 48} V${y + 12}Z" fill="url(#${i % 2 ? 'p2' : 'p1'})"/>` +
           `<circle cx="${x + 8}" cy="${y + 30}" r="2.6" fill="#fff" stroke="${ink}" stroke-width=".4"/>`;
-        if (o.me) body += disc(me, look, x + 22, y + 30, 10, `g${i}`);
+        // A tag with a friend's face on it is to them, so it says so; one
+        // with her own face is from her, and the To is left to write in.
+        const to = o.me && nameAt(i) !== look.name.trim() ? nameAt(i) : '';
+        if (o.me) body += disc(poseAt(o, i), look, x + 22, y + 30, 10, `g${i}`);
         body += `<text x="${x + 40}" y="${y + 20}" font-size="5" font-weight="800" fill="${look.accent}">To</text>` +
-          `<path d="M${x + 49} ${y + 20.5} H${x + 80}" stroke="${ink}" stroke-width=".35" opacity=".5"/>` +
+          (to
+            ? `<text x="${x + 49}" y="${y + 20}" font-size="${fit(to, 31, 6)}" font-weight="900" fill="${ink}">${esc(to)}</text>`
+            : `<path d="M${x + 49} ${y + 20.5} H${x + 80}" stroke="${ink}" stroke-width=".35" opacity=".5"/>`) +
           `<text x="${x + 40}" y="${y + 40}" font-size="5" font-weight="800" fill="${look.accent}">From</text>` +
           `<text x="${x + 40}" y="${y + 50}" font-size="${fit(from, 40, 8)}" font-weight="900" fill="${ink}">${esc(from)}</text>` +
           `<path d="M${x + 12} ${y - 1.5} H${x + 86.5} V${y + 61.5} H${x + 12} L${x - 1.5} ${y + 48.5} V${y + 11.5}Z" ${CUT} stroke="${ink}" opacity=".3"/>`;
@@ -354,9 +376,9 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
           `<path d="M${x + 6} ${y} H${x + 81} A6 6 0 0 1 ${x + 87} ${y + 6} V${y + 70} H${x} V${y + 6} A6 6 0 0 1 ${x + 6} ${y}Z" fill="url(#p${i + 1})"/>` +
           `<circle cx="${cx}" cy="${y + 30}" r="17" fill="#fff" stroke="${ink}" stroke-width=".4" stroke-dasharray="2 1.6"/>` +
           `<path d="M${cx} ${y} V${y + 13}" stroke="${ink}" stroke-width=".4" stroke-dasharray="2 1.6"/>` +
-          `<text x="${cx}" y="${y + 88}" text-anchor="middle" font-size="7" font-weight="800" fill="${fg}" opacity=".85">${esc(look.name)}'s room</text>` +
+          `<text x="${cx}" y="${y + 88}" text-anchor="middle" font-size="7" font-weight="800" fill="${fg}" opacity=".85">${esc(whose(o.me ? nameAt(i) : look.name))} room</text>` +
           `<text x="${cx}" y="${y + 106}" text-anchor="middle" font-size="${fit(text, 76, 13)}" font-weight="900" fill="${fg}">${esc(text)}</text>`;
-        if (o.me) body += figure(o.pose === 'mix' ? poses()[(i + 1) % poses().length].id : o.pose, x + 5, y + 118, 77, 152);
+        if (o.me) body += figure(o.pose === 'mix' ? poses()[(i + 1) % poses().length].id : poseAt(o, i), x + 5, y + 118, 77, 152);
         body += `<path d="${outline}" ${CUT} stroke="${ink}" opacity=".4"/>`;
       }
       return page(pat(1), body, 'Door sign', font);
@@ -370,7 +392,7 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
         body += `<rect x="${x}" y="${y}" width="85" height="55" rx="3" fill="${look.paper}"/>` +
           `<path d="M${x} ${y + 47} H${x + 85} V${y + 52} A3 3 0 0 1 ${x + 82} ${y + 55} H${x + 3} A3 3 0 0 1 ${x} ${y + 52}Z" fill="url(#p1)"/>` +
           logo(look, x + 4, y + 4, 39) +
-          `<text x="${x + 46}" y="${y + 21}" font-size="${fit(look.name, 36, 9)}" font-weight="900" fill="${look.ink}">${esc(look.name)}</text>` +
+          `<text x="${x + 46}" y="${y + 21}" font-size="${fit(look.name || look.brand.name, 36, 9)}" font-weight="900" fill="${look.ink}">${esc(look.name || look.brand.name)}</text>` +
           `<text x="${x + 46}" y="${y + 28}" font-size="${fit(look.brand.tagline, 36, 3.4)}" font-weight="700" fill="${look.accent}">${esc(look.brand.tagline)}</text>` +
           (w ? `<text x="${x + 46}" y="${y + 37}" font-size="${fit(w, 36, 3.2)}" fill="${look.ink}" opacity=".8">${esc(w)}</text>` : '') +
           `<rect x="${x}" y="${y}" width="85" height="55" rx="3" fill="none" stroke="${ink}" stroke-width=".25" opacity=".4"/>`;

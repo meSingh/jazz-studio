@@ -11,7 +11,7 @@ const esc = (s: string): string =>
   s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string);
 
 export function posterSheet (name: string, line: string, pose: PoseId, dark: boolean, look: Look): string {
-  const text = (name.trim() || look.name).toUpperCase();
+  const text = (name.trim() || look.name.trim() || 'Hello').toUpperCase();
   const bg = dark ? look.paper : '#FFFFFF';
   const fg = light(bg) > 0.6 ? (light(look.ink) > 0.6 ? look.paper : look.ink) : look.ink;
   // Heavy capitals run nearly as wide as they are tall, far wider than the
