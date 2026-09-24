@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/assets/icon.png" width="120" alt="Jazz's Studio">
+<img src="media/icon.png" width="120" alt="Jazz's Studio">
 
 # Jazz's Studio
 
@@ -13,7 +13,7 @@
 [![Part of Sukhi Play](https://img.shields.io/badge/part%20of-Sukhi%20Play-17153A)](https://sukhiplay.com/)
 [![Works offline](https://img.shields.io/badge/works-offline-10D6A0)](https://sukhiplay.com/playground/)
 
-<img src="docs/assets/home.png" width="820" alt="Jazz's character waving next to the words Hi Jazz, above six tiles: Stationery, Make from a box, My brand, Play, My makes and Make it yours">
+<img src="media/home.png" width="820" alt="Jazz's character waving next to the words Hi Jazz, above six tiles: Stationery, Make from a box, My brand, Play, My makes and Make it yours">
 
 </div>
 
@@ -49,10 +49,10 @@ The colours are on a strip above the preview in every tool, so a colour is
 tried where it shows rather than in another room.
 
 <div align="center">
-<img src="docs/assets/stickers.png" width="420" alt="The stationery room making a sheet of stickers of her character in six poses">
-<img src="docs/assets/box.png" width="420" alt="Make from a box, with a drawing of a toilet roll showing what to measure and a printed wrap with her face and the word Pens">
-<img src="docs/assets/brand.png" width="420" alt="My brand, with a round badge logo reading Jazz Studio around her face, and business cards">
-<img src="docs/assets/phone.png" width="200" alt="The studio on a phone">
+<img src="media/stickers.png" width="420" alt="The stationery room making a sheet of stickers of her character in six poses">
+<img src="media/box.png" width="420" alt="Make from a box, with a drawing of a toilet roll showing what to measure and a printed wrap with her face and the word Pens">
+<img src="media/brand.png" width="420" alt="My brand, with a round badge logo reading Jazz Studio around her face, and business cards">
+<img src="media/phone.png" width="200" alt="The studio on a phone">
 </div>
 
 ## Printing
@@ -81,7 +81,7 @@ bounces onto her hair back out.
 
 **The character artwork is not covered by the code's licence.** It is a
 likeness of a real child. `src/assets/jazz/`, the icons in `public/`,
-`scripts/icon-1024.png` and `docs/assets/` are © Mandeep Singh, all rights
+`scripts/icon-1024.png` and `media/` are © Mandeep Singh, all rights
 reserved, and may not be reused, modified or redistributed.
 
 ## Building it
