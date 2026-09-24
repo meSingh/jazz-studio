@@ -100,7 +100,8 @@ img { display: block; max-width: 100%; }
   color: inherit;
   text-decoration: none;
 }
-.brand img { width: 40px; height: 40px; border-radius: 12px; box-shadow: 0 4px 12px rgb(0 0 0 / .35); }
+/* Her mark on its own, like Sukhi Play's head: no tile, on whatever colour she chose. */
+.brand img { width: 40px; height: 40px; filter: drop-shadow(0 3px 6px rgb(0 0 0 / .3)); }
 .brand span {
   font-size: 18px;
   font-weight: var(--heavy);
@@ -855,6 +856,7 @@ img { display: block; max-width: 100%; }
 /* Tabs, in Make it yours ------------------------------------------ */
 
 .tabs {
+  position: relative;
   display: flex;
   gap: 6px;
   width: fit-content;
@@ -878,7 +880,6 @@ img { display: block; max-width: 100%; }
 .tab:hover { background: var(--card2); }
 .tab[aria-current="page"] { background: var(--accent); color: var(--on-accent); }
 
-.card--narrow { max-width: 560px; }
 .name-preview { margin: 22px 0 4px; font-size: 40px; font-weight: var(--heavy); line-height: 1; }
 .name-preview b { color: var(--accent); }
 
@@ -936,8 +937,9 @@ dialog.keep p { margin: 0 0 12px; opacity: .85; }
 .keep-done:empty { display: none; }
 
 /* About */
-.about { text-align: center; margin: 0 auto; }
-.about-icon { width: 96px; height: 96px; margin: 14px auto 0; border-radius: 26px; box-shadow: var(--shadow); }
+/* On the page like the other tabs, not in a panel of their own. */
+.about { text-align: center; margin: 0 auto; max-width: 600px; }
+.about-icon { display: block; width: 120px; height: 120px; margin: 4px auto 0; filter: drop-shadow(0 10px 18px rgb(0 0 0 / .3)); }
 .about h2 { margin: 12px 0 6px; font-size: 28px; font-weight: var(--heavy); }
 .about-what { opacity: .9; }
 .about-by { font-weight: 700; color: var(--accent2); }
@@ -1012,7 +1014,7 @@ dialog.ask h2 { margin: 10px 0 8px; font-size: 22px; font-weight: var(--heavy); 
 /* Start again: its own tab */
 .tab--again { color: #ff8a8a; }
 .tab--again[aria-current="page"] { background: #D62828; color: #fff; }
-.again { text-align: center; margin: 0 auto; }
+.again { text-align: center; margin: 0 auto; max-width: 600px; }
 .again h2 { margin: 10px 0 6px; font-size: 28px; font-weight: var(--heavy); }
 .again > p { opacity: .85; }
 .again-art, .ask-icon {
@@ -1246,23 +1248,17 @@ dialog.how { width: min(560px, calc(100vw - 32px)); }
 
 @page { size: A4 portrait; margin: 0; }
 
+.print-sheet { display: none; }
+
 @media print {
-  /* The rest of the page is hidden but still takes up room, and a tall room
-     would print a blank second page; clip the printout to the one sheet. */
-  html, body { background: #fff !important; height: 297mm !important; overflow: hidden !important; }
-  .backdrop-layer { display: none; }
-  /* Anything wider than the paper makes the browser shrink the sheet, so the
-     colour strip, whose rows are wide on purpose, is taken out entirely. */
-  .colourbar { display: none !important; }
-  body * { visibility: hidden; }
-  .print-area, .print-area * { visibility: visible; }
-  .print-area {
-    position: fixed;
-    inset: 0 auto auto 0;
-    width: 210mm;
-    height: 297mm;
-    box-shadow: none;
-    border-radius: 0;
-  }
-  .print-area .sheet-svg { width: 210mm; height: 297mm; max-width: none; }
+  /* Only the copy of the sheet (see readyToPrint in ui.ts), at the top of the
+     page. Everything else is taken out rather than hidden, so nothing above it
+     can push it down the page. */
+  html, body { background: #fff !important; margin: 0 !important; padding: 0 !important; }
+  body > :not(.print-sheet) { display: none !important; }
+  .print-sheet { display: block; break-inside: avoid; page-break-inside: avoid; }
+  /* The width of the page, not 210mm: where the margins are honoured that is
+     the whole A4, and where a printer keeps its own it is a little smaller and
+     still on one page. An A4-shaped sheet that fits across fits down. */
+  .print-sheet svg { display: block; width: 100%; height: auto; max-width: none; max-height: 100vh; }
 }

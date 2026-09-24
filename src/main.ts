@@ -79,7 +79,7 @@ function render (keepScroll = false): void {
 const BRAND = "Jazz's Studio";
 
 const brandMark = (): string =>
-  `<a class="brand" href="#/" aria-label="${BRAND}, home"><img src="./icon-192.png" alt="" width="40" height="40"><span>${BRAND}</span></a>`;
+  `<a class="brand" href="#/" aria-label="${BRAND}, home"><img src="./brand-mark.png" alt="" width="40" height="40"><span>${BRAND}</span></a>`;
 
 /**
  * Sukhi Play's brand, at the foot of every page, because the studio is part of

@@ -12,7 +12,8 @@ locally with Pillow and nothing is sent anywhere.
 
 Writes src/assets/jazz/<name>.webp, trimmed to the character, at most 900px.
 With --icon it also composites the cut-out onto the navy tile her brother's
-icon uses and writes the app icons into public/.
+icon uses and writes the app icons into public/, and the brand mark: the
+same framing with no tile, for the studio's name bar.
 
 Requires Pillow:  pip install Pillow
 """
@@ -113,6 +114,30 @@ def maskable(cut, size=1024):
     return base
 
 
+def mark(cut, size=256):
+    """The brand mark: the icon's framing with no tile behind it, for the
+    studio's own name bar, where it sits on whatever colour she picked."""
+    w = size * 2
+    base = Image.new('RGBA', (w, w), (0, 0, 0, 0))
+    scale = (w * 0.98) / cut.width
+    fig = cut.resize((round(cut.width * scale), round(cut.height * scale)), Image.LANCZOS)
+    base.alpha_composite(fig, ((w - fig.width) // 2, int(w * 0.07)))
+    # Trim to what is drawn, then square it up again with a little room.
+    box = base.getchannel('A').point(lambda v: 255 if v > 10 else 0).getbbox()
+    base = base.crop(box)
+    side = max(base.width, base.height)
+    sq = Image.new('RGBA', (side, side), (0, 0, 0, 0))
+    sq.alpha_composite(base, ((side - base.width) // 2, side - base.height))
+    # The framing cuts her off at the chest. Straight across, that reads as a
+    # cropped photo; faded out over the bottom fifth, as a figure.
+    fade = Image.linear_gradient('L').resize((side, side // 5))
+    fade = fade.transpose(Image.FLIP_TOP_BOTTOM)
+    mask = Image.new('L', (side, side), 255)
+    mask.paste(fade, (0, side - fade.height))
+    sq.putalpha(ImageChops.multiply(sq.getchannel('A'), mask))
+    return sq.resize((size, size), Image.LANCZOS)
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument('image')
@@ -134,6 +159,7 @@ def main():
         for size, name in ((512, 'icon-512.png'), (192, 'icon-192.png'), (180, 'apple-touch-icon.png'), (64, 'favicon.png')):
             big.resize((size, size), Image.LANCZOS).save(os.path.join(PUBLIC, name))
         big.save(os.path.join(HERE, 'scripts', 'icon-1024.png'))
+        mark(cut).save(os.path.join(PUBLIC, 'brand-mark.png'))
         safe = maskable(cut)
         for size in (192, 512):
             safe.resize((size, size), Image.LANCZOS).save(os.path.join(PUBLIC, f'icon-maskable-{size}.png'))

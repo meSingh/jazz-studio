@@ -44,6 +44,12 @@ export function yoursRoom (main: HTMLElement, sub: string): void {
   } else {
     againTab(main, nav);
   }
+  // On a phone the tabs are wider than the screen, and About or Start again
+  // opened with the strip showing only the first two. Brought into view
+  // within the strip, not by scrolling the page.
+  const strip = main.querySelector<HTMLElement>('.tabs');
+  const here = strip?.querySelector<HTMLElement>('[aria-current]');
+  if (strip && here) strip.scrollLeft = here.offsetLeft - (strip.clientWidth - here.offsetWidth) / 2;
 }
 
 function lookTab (main: HTMLElement, nav: string): void {
@@ -101,8 +107,8 @@ function aboutTab (main: HTMLElement, nav: string): void {
   const out = (href: string, text: string): string => inSukhiPlay
     ? `<b>${text}</b>`
     : `<a class="out" href="${href}" target="_blank" rel="noopener">${text}</a>`;
-  main.innerHTML = `${nav}<section class="card card--narrow about">
-    <img class="about-icon" src="./icon-192.png" alt="" width="96" height="96">
+  main.innerHTML = `${nav}<section class="about">
+    <img class="about-icon" src="./brand-mark.png" alt="" width="120" height="120">
     <h2>Jazz's Studio</h2>
     <p class="about-what">Design and print your own stickers, labels, diary, planners and more, make things from boxes and
       cartons, give yourself a brand, and play with secret codes and story ideas.</p>
@@ -135,7 +141,7 @@ const KEPT = [
 ];
 
 function againTab (main: HTMLElement, nav: string): void {
-  main.innerHTML = `${nav}<section class="card card--narrow again">
+  main.innerHTML = `${nav}<section class="again">
     <div class="again-art">${ICONS.reset}</div>
     <h2>Start again</h2>
     <p>Puts the studio back how it was the first time it opened. Worth thinking about first: there is no undo.</p>

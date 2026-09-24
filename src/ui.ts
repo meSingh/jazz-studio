@@ -73,9 +73,36 @@ export function wirePrint (root: HTMLElement): void {
       status = b.nextElementSibling as HTMLElement | null;
       if (status) { status.textContent = 'Sending it to the printer...'; delete status.dataset.ok; }
     }
+    readyToPrint();
     window.print();
   }));
 }
+
+/**
+ * What is printed: a copy of the sheet, straight inside the body, with
+ * everything else taken out of the printout (see the print styles).
+ *
+ * Printing the sheet where it sits on the screen went wrong on an iPad:
+ * Safari printed it from wherever the page was scrolled to, and without the
+ * zero margins asked for, so one A4 sheet came out as the bottom of one page
+ * and the top of the next. On its own at the top of the page, and sized to
+ * the page rather than to 210mm, it is one sheet whatever margins the printer
+ * keeps. Its ids are renamed so the copy's patterns never point at the
+ * screen's. Also run for the browser's own Print menu.
+ */
+export function readyToPrint (): void {
+  const area = document.querySelector('.print-area');
+  if (!area) return;
+  let copy = document.querySelector<HTMLElement>('body > .print-sheet');
+  if (!copy) {
+    copy = document.createElement('div');
+    copy.className = 'print-sheet';
+    copy.setAttribute('aria-hidden', 'true');
+    document.body.append(copy);
+  }
+  copy.innerHTML = scoped(area.innerHTML, 'pr-');
+}
+window.addEventListener('beforeprint', readyToPrint);
 
 /** Buttons that behave as one choice, as radio buttons do. */
 export function wireChoice (root: HTMLElement, attr: string, pick: (value: string) => void): void {

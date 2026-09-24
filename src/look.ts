@@ -110,7 +110,7 @@ const start = (): Look => {
     lettering: 'rounded',
     pattern: 'zigzag',
     pose: 'hello',
-    backdrop: 'stars',
+    backdrop: 'bubbles',
     keepJazz: false,
     brand: { name: 'Jazz Studio', tagline: 'Artist · Maker · Writer', style: 'badge', me: true }
   };

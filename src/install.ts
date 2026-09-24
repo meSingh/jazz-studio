@@ -26,8 +26,34 @@ export function install (): void {
     navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(() => {
       /* offline use is a bonus, not a requirement */
     });
+    // The page's own script and stylesheet, and every picture, into the
+    // worker's cache once it is running. The worker keeps what it fetches, but
+    // only for a page it already controls, which on the first visit it does
+    // not: the studio then needed a second visit before it worked offline,
+    // and a pose she had not happened to see on the screen was missing from
+    // her stickers. The name must match CACHE in sw.js.
+    void navigator.serviceWorker.ready.then(async () => {
+      const cache = await caches.open('jazz-studio-v1');
+      const own = [...document.querySelectorAll<HTMLScriptElement | HTMLLinkElement>('script[src], link[rel="stylesheet"]')]
+        .map((e) => e instanceof HTMLScriptElement ? e.src : e.href);
+      const wanted = [...own, ...PICTURES].map((u) => new URL(u, location.href).href);
+      for (const url of wanted) {
+        if (!(await cache.match(url))) await cache.add(url).catch(() => {});
+      }
+      // And the last version's files go: every update renames them, so they
+      // would only pile up. The studio loads as one script, so nothing still
+      // open can be asking for them.
+      for (const req of await cache.keys()) {
+        if (new URL(req.url).pathname.includes('/assets/') && !wanted.includes(req.url)) await cache.delete(req);
+      }
+    });
   });
 }
+
+const PICTURES = [
+  ...Object.values(import.meta.glob<string>('./assets/**/*.{webp,png}', { eager: true, query: '?url', import: 'default' })),
+  './brand-mark.png'
+];
 
 // ------------------------------------------------------------ home screen
 
