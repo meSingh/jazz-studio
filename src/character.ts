@@ -1,45 +1,66 @@
 /**
- * Box buddy: a stand-in, keeping the spot warm for Jazz's own character.
+ * Jazz's character: six poses of the same girl, drawn from a photo of her.
  *
- * The real one is hers to invent, so this one is deliberately not a person.
- * It is a cardboard box with a bow and a pencil, because the studio is about
- * making things out of exactly that. When she has drawn her character on
- * paper, the drawing goes through the same tracing that turns drawings into
- * colouring pictures, and replaces this function's output.
+ * Each pose is a cut-out made by scripts/cutout.py. She picks which one says
+ * hello on Home and which one goes on her stationery, and can change either
+ * whenever she likes. The artwork is hers; see the README.
+ *
+ * FOCUS is where her head is in each image, measured from the cut-outs, so a
+ * sticker or a label can frame her face in a circle rather than guess.
  */
-import type { Look } from './look';
+import hello from './assets/jazz/hello.webp';
+import draw from './assets/jazz/draw.webp';
+import idea from './assets/jazz/idea.webp';
+import wink from './assets/jazz/wink.webp';
+import cool from './assets/jazz/cool.webp';
+import portrait from './assets/jazz/portrait.webp';
 
-export function buddy (look: Look, label = 'Box buddy'): string {
-  const { accent, accent2, ink } = look;
-  const card = '#D6A66B';
-  const shade = '#B9854B';
-  return `<svg viewBox="0 0 120 150" role="img" aria-label="${label}" class="buddy-svg">
-  <ellipse cx="60" cy="143" rx="36" ry="5" fill="${ink}" opacity=".12"/>
-  <path d="M24 38 L10 22 L50 22 L58 38Z" fill="${shade}"/>
-  <path d="M96 38 L110 22 L70 22 L62 38Z" fill="${shade}"/>
-  <rect x="22" y="36" width="76" height="92" rx="7" fill="${card}"/>
-  <path d="M22 50 H98" stroke="${shade}" stroke-width="2" opacity=".6"/>
-  <rect x="64" y="40" width="30" height="9" rx="2" fill="${accent2}" opacity=".75" transform="rotate(-8 79 44)"/>
-  <g transform="translate(40 22)">
-    <path d="M0 0 L-12 -8 L-12 8Z" fill="${accent}"/>
-    <path d="M0 0 L12 -8 L12 8Z" fill="${accent}"/>
-    <circle r="4" fill="${accent}"/>
-  </g>
-  <ellipse cx="46" cy="78" rx="4.5" ry="6" fill="${ink}"/>
-  <ellipse cx="74" cy="78" rx="4.5" ry="6" fill="${ink}"/>
-  <circle cx="47.5" cy="76" r="1.5" fill="#fff"/>
-  <circle cx="75.5" cy="76" r="1.5" fill="#fff"/>
-  <circle cx="38" cy="90" r="5" fill="${accent}" opacity=".45"/>
-  <circle cx="82" cy="90" r="5" fill="${accent}" opacity=".45"/>
-  <path d="M52 92 Q60 100 68 92" fill="none" stroke="${ink}" stroke-width="3" stroke-linecap="round"/>
-  <path d="M22 96 Q10 100 8 112" fill="none" stroke="${ink}" stroke-width="3.5" stroke-linecap="round"/>
-  <path d="M98 96 Q110 94 112 84" fill="none" stroke="${ink}" stroke-width="3.5" stroke-linecap="round"/>
-  <g transform="rotate(-35 112 80)">
-    <rect x="108" y="52" width="8" height="30" rx="1.5" fill="${accent2}"/>
-    <path d="M108 82 L112 92 L116 82Z" fill="#F3D9B1"/>
-    <path d="M110.6 88 L112 92 L113.4 88Z" fill="${ink}"/>
-  </g>
-  <rect x="36" y="126" width="14" height="12" rx="4" fill="${ink}"/>
-  <rect x="70" y="126" width="14" height="12" rx="4" fill="${ink}"/>
-</svg>`;
+export type PoseId = 'hello' | 'draw' | 'idea' | 'wink' | 'cool' | 'portrait';
+
+export interface Pose {
+  id: PoseId;
+  label: string;
+  url: string;
+  w: number;
+  h: number;
+  /** Centre of her face, and a circle wide enough for her whole head, in image pixels. */
+  cx: number;
+  cy: number;
+  d: number;
+}
+
+export const POSES: Pose[] = [
+  { id: 'portrait', label: 'Smiling', url: portrait, w: 842, h: 900, cx: 483, cy: 300, d: 600 },
+  { id: 'hello', label: 'Waving', url: hello, w: 900, h: 838, cx: 450, cy: 300, d: 600 },
+  { id: 'draw', label: 'Drawing', url: draw, w: 900, h: 838, cx: 450, cy: 300, d: 600 },
+  { id: 'idea', label: 'Big idea', url: idea, w: 833, h: 900, cx: 483, cy: 300, d: 600 },
+  { id: 'wink', label: 'Wink', url: wink, w: 900, h: 838, cx: 450, cy: 300, d: 600 },
+  { id: 'cool', label: 'Cool', url: cool, w: 799, h: 900, cx: 483, cy: 300, d: 600 }
+];
+
+export const pose = (id: PoseId): Pose => POSES.find((p) => p.id === id) ?? POSES[0];
+
+/** Her face framed in a circle, for SVG sheets. `clip` must be unique on the page. */
+export function face (id: PoseId, x: number, y: number, r: number, clip: string, zoom = 1): string {
+  const p = pose(id);
+  const k = (2 * r * zoom) / p.d;
+  return `<clipPath id="${clip}"><circle cx="${x}" cy="${y}" r="${r}"/></clipPath>` +
+    `<image href="${p.url}" x="${+(x - p.cx * k).toFixed(2)}" y="${+(y - p.cy * k).toFixed(2)}" ` +
+    `width="${+(p.w * k).toFixed(2)}" height="${+(p.h * k).toFixed(2)}" clip-path="url(#${clip})" preserveAspectRatio="none"/>`;
+}
+
+/** The whole pose, standing on a line, fitted into a box. */
+export function figure (id: PoseId, x: number, y: number, w: number, h: number): string {
+  const p = pose(id);
+  const k = Math.min(w / p.w, h / p.h);
+  const fw = p.w * k;
+  const fh = p.h * k;
+  return `<image href="${p.url}" x="${+(x + (w - fw) / 2).toFixed(2)}" y="${+(y + h - fh).toFixed(2)}" ` +
+    `width="${+fw.toFixed(2)}" height="${+fh.toFixed(2)}" preserveAspectRatio="none"/>`;
+}
+
+/** For the screens: an <img> of a pose. */
+export function img (id: PoseId, cls = ''): string {
+  const p = pose(id);
+  return `<img class="${cls}" src="${p.url}" width="${p.w}" height="${p.h}" alt="" draggable="false">`;
 }

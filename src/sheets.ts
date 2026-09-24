@@ -2,24 +2,58 @@
  * Printable sheets, drawn in millimetres.
  *
  * Every sheet is an SVG whose viewBox is an A4 page, 210 by 297, so one unit
- * is one millimetre on paper. That is what lets a wrap for a toilet roll come
- * out of the printer the right size to go round one, as long as it is printed
- * at actual size. Each sheet carries a 5 cm check line so that can be tested
- * with a ruler rather than taken on trust.
+ * is one millimetre on paper, as long as it is printed at actual size. Most
+ * sheets carry a 5 cm check line so that can be tested with a ruler. Nothing
+ * important is closer than 10 mm to the edge, inside what home printers reach.
  *
- * Nothing is drawn closer than 10 mm to the edge, which is inside what home
- * printers can reach.
+ * Her character, her logo, her pattern and her colours go on as much of it as
+ * makes sense. It is her stationery; it should look like nobody else's.
  */
 import { light, type Look } from './look';
 import { defs, type PatternName } from './patterns';
+import { face, figure, POSES, type PoseId } from './character';
+import { logo, fit } from './brand';
 
-export type Kind = 'stickers' | 'bookmarks' | 'labels' | 'diary';
+export type Kind =
+  | 'stickers' | 'faces' | 'bookmarks' | 'labels' | 'cover' | 'diary'
+  | 'planner' | 'todo' | 'tags' | 'door' | 'letter' | 'cards' | 'logos';
 
-export const KINDS: Array<{ id: Kind; label: string; blurb: string }> = [
-  { id: 'stickers', label: 'Stickers', blurb: 'Print on sticker paper, then cut them out' },
-  { id: 'bookmarks', label: 'Bookmarks', blurb: 'Four to a page. Thick paper works best' },
-  { id: 'labels', label: 'Name labels', blurb: 'For books, boxes and pencil cases' },
-  { id: 'diary', label: 'Diary page', blurb: 'A page for your diary or scrapbook' }
+export interface Options {
+  pattern: PatternName;
+  words: string;
+  /** Put her character on it, where the sheet has room for her. */
+  me: boolean;
+  pose: PoseId | 'mix';
+}
+
+export interface KindInfo {
+  id: Kind;
+  label: string;
+  blurb: string;
+  words: string;
+  /** The placeholder in the words box: what goes on it when she types nothing. */
+  start: (look: Look) => string;
+  me: boolean;
+  pose: boolean;
+}
+
+export const KINDS: KindInfo[] = [
+  { id: 'faces', label: 'Me stickers', blurb: 'Your character on stickers. Print on sticker paper', words: 'Name under each one (or leave empty)', start: () => '', me: false, pose: true },
+  { id: 'stickers', label: 'Pattern stickers', blurb: 'Circles, squares and hexagons to cut out', words: 'What should they say?', start: (l) => l.name, me: false, pose: false },
+  { id: 'labels', label: 'Name labels', blurb: 'For books, boxes and pencil cases', words: 'Name on the labels', start: (l) => l.name, me: true, pose: false },
+  { id: 'bookmarks', label: 'Bookmarks', blurb: 'Four to a page. Thick paper works best', words: 'Words down the middle', start: (l) => l.name, me: true, pose: false },
+  { id: 'cover', label: 'Diary cover', blurb: 'The front of your diary, with you on it', words: 'Title on the cover', start: (l) => `${l.name}'s Diary`, me: false, pose: true },
+  { id: 'diary', label: 'Diary page', blurb: 'Date, mood and lines, with your name at the top', words: 'Something to write about (or leave empty)', start: () => '', me: true, pose: false },
+  { id: 'planner', label: 'Week planner', blurb: 'Every day of the week, and a goal', words: 'Title', start: (l) => `${l.name}'s Week`, me: true, pose: false },
+  { id: 'todo', label: 'To-do lists', blurb: 'Two lists to a page, with boxes to tick', words: 'Title', start: () => 'Things to do', me: true, pose: false },
+  { id: 'tags', label: 'Gift tags', blurb: 'Eight tags. Punch a hole and add ribbon', words: 'From', start: (l) => l.name, me: true, pose: false },
+  { id: 'door', label: 'Door sign', blurb: 'Two hangers for your door handle', words: 'What the sign says', start: () => 'Knock first!', me: true, pose: true },
+  { id: 'letter', label: 'Letter paper', blurb: 'Your own letter paper, with your logo', words: 'A motto for the top (or leave empty)', start: () => '', me: true, pose: false }
+];
+
+export const BRAND_KINDS: KindInfo[] = [
+  { id: 'cards', label: 'Business cards', blurb: 'Ten cards, the size of a real one', words: 'One more line (or leave empty)', start: () => '', me: false, pose: false },
+  { id: 'logos', label: 'Logo stickers', blurb: 'Twelve of your logo, for everything you make', words: '', start: () => '', me: false, pose: false }
 ];
 
 const W = 210;
@@ -36,38 +70,62 @@ function page (defsXml: string, body: string, label: string): string {
 }
 
 /**
- * Moves and scales a path made only of absolute commands with x,y pairs.
- * Done to the numbers rather than with a transform, because a transform would
- * scale the pattern inside and the dashes of the cut line along with it.
- */
-function place (d: string, x: number, y: number, s: number): string {
-  let i = 0;
-  return d.replace(/-?\d*\.?\d+/g, (n) => (+(parseFloat(n) * s + (i++ % 2 ? y : x)).toFixed(2)).toString());
-}
-
-const HEART = 'M5 8.6 C1.2 5.8 1 3.4 2.4 2.3 C3.5 1.5 4.6 2 5 3 C5.4 2 6.5 1.5 7.6 2.3 C9 3.4 8.8 5.8 5 8.6Z';
-
-/**
- * The writing colour on paper. Sheets are always printed on white, so a light
+ * The writing colour on white paper. Sheets are printed on white, so a light
  * writing colour picked for a dark screen swaps for the dark page colour.
  */
 const inkOf = (look: Look): string => (light(look.ink) > 0.6 ? look.paper : look.ink);
-
+const on = (c: string): string => (light(c) > 0.6 ? '#111111' : '#FFFFFF');
 const swap = (look: Look): Look => ({ ...look, accent: look.accent2, accent2: look.accent });
 
-/** Shrinks long words to fit a width, roughly, since SVG will not wrap for us. */
-function fit (text: string, width: number, size: number): number {
-  const guess = text.length * size * 0.56;
-  return guess > width ? Math.max(3, size * width / guess) : size;
+function hexagon (cx: number, cy: number, r: number): string {
+  return 'M' + [0, 1, 2, 3, 4, 5].map((i) => {
+    const a = Math.PI / 3 * i;
+    return `${(cx + r * Math.cos(a)).toFixed(2)} ${(cy + r * Math.sin(a)).toFixed(2)}`;
+  }).join(' L') + 'Z';
 }
 
-export function sheet (kind: Kind, pattern: PatternName, words: string, look: Look): string {
-  const w = words.trim() || look.name;
+/** Which pose goes in slot `i`: the one she chose, or each in turn for a mix. */
+const poseAt = (o: Options, i: number): PoseId =>
+  o.pose === 'mix' ? POSES[i % POSES.length].id : o.pose;
+
+/** A line that should measure exactly 5 cm, so a ruler can tell whether the printer shrank the page. */
+function check (ink: string): string {
+  return `<g opacity=".5"><path d="M15 290 H65 M15 288 V292 M65 288 V292" stroke="${ink}" stroke-width=".35"/>` +
+    `<text x="68" y="291.3" font-size="2.8" fill="${ink}" font-family="system-ui, sans-serif">This line should measure 5 cm. If it does not, print at actual size.</text></g>`;
+}
+
+/** Five mood faces, drawn, for the diary page: happy, excited, okay, sad, sleepy. */
+function moods (x: number, y: number, ink: string, accent: string): string {
+  const mouths = [
+    'M-2.4 1 Q0 3.4 2.4 1',
+    'M-2.6 0.6 Q0 4.4 2.6 0.6 Z',
+    'M-2.2 1.6 H2.2',
+    'M-2.4 2.6 Q0 0.4 2.4 2.6',
+    'M-1.2 1.8 Q0 1 1.2 1.8'
+  ];
+  return mouths.map((m, i) => {
+    const cx = x + i * 11;
+    const eyes = i === 4
+      ? `<path d="M${cx - 2.6} ${y - 1.2} h1.8 M${cx + 0.8} ${y - 1.2} h1.8" stroke="${ink}" stroke-width=".5"/>`
+      : `<circle cx="${cx - 1.7}" cy="${y - 1.3}" r=".55" fill="${ink}"/><circle cx="${cx + 1.7}" cy="${y - 1.3}" r=".55" fill="${ink}"/>`;
+    return `<circle cx="${cx}" cy="${y}" r="4.4" fill="#fff" stroke="${accent}" stroke-width=".6"/>${eyes}` +
+      `<path transform="translate(${cx} ${y})" d="${m}" fill="${i === 1 ? ink : 'none'}" stroke="${ink}" stroke-width=".5" stroke-linecap="round"/>`;
+  }).join('');
+}
+
+/** Her face in a small disc, for headers. */
+const disc = (look: Look, cx: number, cy: number, r: number, id: string): string =>
+  `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${look.accent2}"/>` + face(look.pose, cx, cy - r * 0.04, r * 0.98, id);
+
+export function sheet (kind: Kind, o: Options, look: Look): string {
+  const w = o.words.trim();
   const ink = inkOf(look);
+  const pat = (scale: number): string => defs('p1', o.pattern, look, scale) + defs('p2', o.pattern, swap(look), scale);
+
   switch (kind) {
     case 'stickers': {
-      const d = defs('p1', pattern, look, 0.9) + defs('p2', pattern, swap(look), 0.9);
       let body = '';
+      const text = w || look.name;
       for (let row = 0; row < 6; row++) {
         for (let col = 0; col < 4; col++) {
           const cx = 37.5 + col * 45;
@@ -75,148 +133,245 @@ export function sheet (kind: Kind, pattern: PatternName, words: string, look: Lo
           const fill = (row + col) % 2 ? 'url(#p2)' : 'url(#p1)';
           const shape = (row * 4 + col) % 3;
           if (shape === 0) {
-            const size = fit(w, 26, 7);
-            body += `<circle cx="${cx}" cy="${cy}" r="20" fill="${fill}"/>` +
-              `<circle cx="${cx}" cy="${cy}" r="13" fill="#fff"/>` +
-              `<text x="${cx}" y="${cy + size * 0.35}" text-anchor="middle" font-size="${size}" font-weight="700" fill="${ink}">${esc(w)}</text>` +
+            const size = fit(text, 24, 7);
+            body += `<circle cx="${cx}" cy="${cy}" r="20" fill="${fill}"/><circle cx="${cx}" cy="${cy}" r="13" fill="#fff"/>` +
+              `<text x="${cx}" y="${cy + size * 0.35}" text-anchor="middle" font-size="${size}" font-weight="800" fill="${ink}">${esc(text)}</text>` +
               `<circle cx="${cx}" cy="${cy}" r="21.5" ${CUT} stroke="${ink}" opacity=".35"/>`;
           } else if (shape === 1) {
             body += `<rect x="${cx - 19}" y="${cy - 19}" width="38" height="38" rx="7" fill="${fill}"/>` +
               `<rect x="${cx - 20.5}" y="${cy - 20.5}" width="41" height="41" rx="8" ${CUT} stroke="${ink}" opacity=".35"/>`;
           } else {
-            body += `<path d="${place(HEART, cx - 23, cy - 24, 4.6)}" fill="${fill}"/>` +
-              `<path d="${place(HEART, cx - 25, cy - 26.2, 5)}" ${CUT} stroke="${ink}" opacity=".35"/>`;
+            body += `<path d="${hexagon(cx, cy, 20.5)}" fill="${fill}"/>` +
+              `<path d="${hexagon(cx, cy, 22)}" ${CUT} stroke="${ink}" opacity=".35"/>`;
           }
         }
       }
-      return page(d, body + check(ink), 'Sticker sheet');
+      return page(pat(0.9), body + check(ink), 'Pattern stickers');
     }
-    case 'bookmarks': {
-      const d = defs('p1', pattern, look, 0.7) + defs('p2', pattern, swap(look), 0.7);
+
+    case 'faces': {
       let body = '';
+      for (let row = 0; row < 5; row++) {
+        for (let col = 0; col < 4; col++) {
+          const i = row * 4 + col;
+          const cx = 37.5 + col * 45;
+          const cy = 36 + row * 51;
+          body += `<circle cx="${cx}" cy="${cy}" r="21" fill="url(#${i % 2 ? 'p2' : 'p1'})"/>` +
+            `<circle cx="${cx}" cy="${cy}" r="17.5" fill="${i % 2 ? look.accent : look.accent2}"/>` +
+            face(poseAt(o, i), cx, cy - (w ? 2.5 : 1), 17.3, `f${i}`);
+          if (w) {
+            // On the ring, below her chin, and still inside the cut line.
+            const size = fit(w, 18, 4);
+            body += `<rect x="${cx - 11}" y="${cy + 13.5}" width="22" height="6.5" rx="3.25" fill="${look.paper}"/>` +
+              `<text x="${cx}" y="${cy + 16.75 + size * 0.35}" text-anchor="middle" font-size="${size}" font-weight="800" fill="${on(look.paper)}">${esc(w)}</text>`;
+          }
+          body += `<circle cx="${cx}" cy="${cy}" r="22.5" ${CUT} stroke="${ink}" opacity=".35"/>`;
+        }
+      }
+      return page(pat(0.8), body + check(ink), 'Me stickers');
+    }
+
+    case 'bookmarks': {
+      let body = '';
+      const text = w || look.name;
       for (let i = 0; i < 4; i++) {
         const x = 15 + i * 47;
-        const y = 34;
-        const fill = i % 2 ? 'url(#p2)' : 'url(#p1)';
-        const size = fit(w, 110, 13);
-        body += `<rect x="${x}" y="${y}" width="40" height="190" rx="4" fill="${fill}"/>` +
-          `<rect x="${x + 6}" y="${y + 40}" width="28" height="130" rx="3" fill="#fff" opacity=".92"/>` +
-          `<text transform="translate(${x + 20 + size * 0.35} ${y + 105}) rotate(-90)" text-anchor="middle" font-size="${size}" font-weight="700" fill="${ink}">${esc(w)}</text>` +
-          `<circle cx="${x + 20}" cy="${y + 14}" r="3" fill="#fff" stroke="${ink}" stroke-width=".4"/>` +
-          `<rect x="${x - 1.5}" y="${y - 1.5}" width="43" height="193" rx="5" ${CUT} stroke="${ink}" opacity=".35"/>`;
+        const y = 30;
+        const size = fit(text, 104, 13);
+        body += `<rect x="${x}" y="${y}" width="40" height="196" rx="4" fill="url(#${i % 2 ? 'p2' : 'p1'})"/>` +
+          `<rect x="${x + 6}" y="${y + 48}" width="28" height="136" rx="3" fill="#fff" opacity=".94"/>` +
+          `<text transform="translate(${x + 20 + size * 0.35} ${y + 116}) rotate(-90)" text-anchor="middle" font-size="${size}" font-weight="800" fill="${ink}">${esc(text)}</text>`;
+        body += o.me
+          ? `<circle cx="${x + 20}" cy="${y + 24}" r="15" fill="#fff"/>` + disc(look, x + 20, y + 24, 13.5, `b${i}`)
+          : `<circle cx="${x + 20}" cy="${y + 14}" r="3" fill="#fff" stroke="${ink}" stroke-width=".4"/>`;
+        body += `<rect x="${x - 1.5}" y="${y - 1.5}" width="43" height="199" rx="5" ${CUT} stroke="${ink}" opacity=".35"/>`;
       }
-      return page(d, body + check(ink), 'Bookmarks');
+      return page(pat(0.7), body + check(ink), 'Bookmarks');
     }
+
     case 'labels': {
-      const d = defs('p1', pattern, look, 0.5) + defs('p2', pattern, swap(look), 0.5);
       let body = '';
+      const text = w || look.name;
       for (let row = 0; row < 7; row++) {
         for (let col = 0; col < 2; col++) {
           const x = 15 + col * 95;
-          const y = 18 + row * 36;
-          const fill = (row + col) % 2 ? 'url(#p2)' : 'url(#p1)';
-          const size = fit(w, 54, 11);
-          body += `<rect x="${x}" y="${y}" width="85" height="30" rx="5" fill="#fff" stroke="${look.accent}" stroke-width=".8"/>` +
-            `<path d="M${x + 5} ${y} H${x + 22} V${y + 30} H${x + 5} A5 5 0 0 1 ${x} ${y + 25} V${y + 5} A5 5 0 0 1 ${x + 5} ${y}Z" fill="${fill}"/>` +
-            `<text x="${x + 28}" y="${y + 10}" font-size="4" fill="${ink}" opacity=".7">This belongs to</text>` +
-            `<text x="${x + 28}" y="${y + 22}" font-size="${size}" font-weight="700" fill="${ink}">${esc(w)}</text>` +
-            `<rect x="${x - 1.5}" y="${y - 1.5}" width="88" height="33" rx="6" ${CUT} stroke="${ink}" opacity=".35"/>`;
+          const y = 16 + row * 37;
+          const i = row * 2 + col;
+          const size = fit(text, 50, 11);
+          body += `<rect x="${x}" y="${y}" width="85" height="31" rx="5" fill="#fff" stroke="${look.accent}" stroke-width=".8"/>` +
+            `<path d="M${x + 5} ${y} H${x + 26} V${y + 31} H${x + 5} A5 5 0 0 1 ${x} ${y + 26} V${y + 5} A5 5 0 0 1 ${x + 5} ${y}Z" fill="url(#${i % 2 ? 'p2' : 'p1'})"/>`;
+          if (o.me) body += disc(look, x + 13, y + 15.5, 11, `l${i}`);
+          body += `<text x="${x + 31}" y="${y + 10.5}" font-size="3.8" fill="${ink}" opacity=".7">This belongs to</text>` +
+            `<text x="${x + 31}" y="${y + 23}" font-size="${size}" font-weight="800" fill="${ink}">${esc(text)}</text>` +
+            `<rect x="${x - 1.5}" y="${y - 1.5}" width="88" height="34" rx="6" ${CUT} stroke="${ink}" opacity=".35"/>`;
         }
       }
-      return page(d, body + check(ink), 'Name labels');
+      return page(pat(0.5), body + check(ink), 'Name labels');
     }
+
+    case 'cover': {
+      const title = w || `${look.name}'s Diary`;
+      const size = fit(title, 150, 20);
+      const year = new Date().getFullYear();
+      const body = `<rect x="10" y="10" width="190" height="277" rx="8" fill="url(#p1)"/>` +
+        `<rect x="22" y="22" width="166" height="253" rx="6" fill="${look.paper}"/>` +
+        `<rect x="26" y="26" width="158" height="245" rx="4" fill="none" stroke="${look.accent}" stroke-width=".8"/>` +
+        `<text x="105" y="60" text-anchor="middle" font-size="${size}" font-weight="900" fill="${look.ink}">${esc(title)}</text>` +
+        `<path d="M70 70 H140" stroke="${look.accent}" stroke-width="1.4" stroke-linecap="round"/>` +
+        `<circle cx="105" cy="146" r="58" fill="${look.accent}" opacity=".2"/>` +
+        figure(o.pose === 'mix' ? look.pose : o.pose, 38, 78, 134, 128) +
+        `<rect x="26" y="206" width="158" height="1" fill="${look.accent}" opacity=".6"/>` +
+        logo(look, 34, 214, 46) +
+        `<g transform="rotate(-8 150 240)"><rect x="118" y="226" width="64" height="24" rx="3" fill="none" stroke="${look.accent2}" stroke-width="1.6"/>` +
+        `<text x="150" y="236.5" text-anchor="middle" font-size="6.5" font-weight="900" fill="${look.accent2}" letter-spacing="1">PRIVATE</text>` +
+        `<text x="150" y="245" text-anchor="middle" font-size="5" font-weight="800" fill="${look.accent2}" letter-spacing="1">KEEP OUT</text></g>` +
+        `<text x="105" y="268" text-anchor="middle" font-size="5" fill="${look.ink}" opacity=".7" letter-spacing="2">${year}</text>`;
+      return page(pat(1), body, 'Diary cover');
+    }
+
     case 'diary': {
-      const d = defs('p1', pattern, look, 0.8);
       let lines = '';
-      for (let y = 70; y <= 262; y += 9) lines += `<path d="M24 ${y} H186" stroke="${look.accent2}" stroke-width=".4" opacity=".7"/>`;
-      const body = `<rect x="10" y="10" width="190" height="277" rx="6" fill="url(#p1)"/>` +
-        `<rect x="18" y="18" width="174" height="261" rx="4" fill="#fff"/>` +
-        `<text x="26" y="40" font-size="13" font-weight="700" fill="${ink}">Dear diary</text>` +
-        `<text x="128" y="40" font-size="5" fill="${ink}" opacity=".7">Date</text>` +
-        `<path d="M140 40 H186" stroke="${ink}" stroke-width=".4" opacity=".6"/>` +
-        `<path d="M24 50 H186" stroke="${look.accent}" stroke-width="1"/>` +
-        `<text x="186" y="274" text-anchor="end" font-size="4.5" fill="${ink}" opacity=".6">${esc(w)}</text>` + lines;
-      return page(d, body, 'Diary page');
+      const first = w ? 86 : 76;
+      for (let y = first; y <= 272; y += 9) lines += `<path d="M30 ${y} H192" stroke="${look.accent}" stroke-width=".35" opacity=".55"/>`;
+      let body = `<rect x="10" y="10" width="10" height="277" rx="3" fill="url(#p1)"/>`;
+      if (o.me) body += disc(look, 36, 28, 10.5, 'd1');
+      const tx = o.me ? 51 : 30;
+      body += `<text x="${tx}" y="27" font-size="10" font-weight="900" fill="${ink}">${esc(look.name)}'s Diary</text>` +
+        `<text x="${tx}" y="34.5" font-size="4" fill="${look.accent}" font-weight="700" letter-spacing=".6">${esc(look.brand.tagline.toUpperCase())}</text>` +
+        `<text x="140" y="27" font-size="4.5" fill="${ink}" opacity=".7">Date</text><path d="M151 27.5 H192" stroke="${ink}" stroke-width=".4" opacity=".5"/>` +
+        `<path d="M30 42 H192" stroke="${look.accent}" stroke-width="1"/>` +
+        `<text x="30" y="56.5" font-size="4.5" fill="${ink}" opacity=".75">Today I feel</text>` + moods(66, 55, ink, look.accent) +
+        `<text x="128" y="56.5" font-size="4.5" fill="${ink}" opacity=".75">Weather</text><path d="M146 57 H192" stroke="${ink}" stroke-width=".4" opacity=".5"/>`;
+      if (w) {
+        body += `<rect x="30" y="65" width="162" height="12" rx="2" fill="${look.accent}" opacity=".14"/>` +
+          `<text x="34" y="73" font-size="${fit(`Write about: ${w}`, 154, 4.8)}" font-weight="800" fill="${ink}">Write about: ${esc(w)}</text>`;
+      }
+      body += lines + `<text x="192" y="283" text-anchor="end" font-size="3.5" fill="${ink}" opacity=".5">${esc(look.brand.name)}</text>`;
+      return page(pat(0.8), body, 'Diary page');
+    }
+
+    case 'planner': {
+      const title = w || `${look.name}'s Week`;
+      let body = `<rect x="10" y="10" width="190" height="8" rx="3" fill="url(#p1)"/>`;
+      if (o.me) body += disc(look, 24, 33, 10, 'pl');
+      const tx = o.me ? 38 : 15;
+      body += `<text x="${tx}" y="36" font-size="${fit(title, 95, 11)}" font-weight="900" fill="${ink}">${esc(title)}</text>` +
+        `<text x="135" y="36" font-size="4.5" fill="${ink}" opacity=".7">Week of</text><path d="M152 36.5 H195" stroke="${ink}" stroke-width=".4" opacity=".5"/>`;
+      const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday', 'This week\'s goal'];
+      days.forEach((d, i) => {
+        const x = i < 4 ? 15 : 108;
+        const y = 48 + (i % 4) * 58;
+        const c = i === 7 ? look.accent2 : look.accent;
+        body += `<rect x="${x}" y="${y}" width="87" height="53" rx="4" fill="#fff" stroke="${c}" stroke-width=".7"/>` +
+          `<path d="M${x + 4} ${y} H${x + 83} A4 4 0 0 1 ${x + 87} ${y + 4} V${y + 10} H${x} V${y + 4} A4 4 0 0 1 ${x + 4} ${y}Z" fill="${c}"/>` +
+          `<text x="${x + 5}" y="${y + 7}" font-size="5" font-weight="800" fill="${on(c)}">${d}</text>`;
+        for (let l = 0; l < 4; l++) body += `<path d="M${x + 5} ${y + 20 + l * 9} H${x + 82}" stroke="${ink}" stroke-width=".3" opacity=".35"/>`;
+      });
+      return page(pat(0.8), body + check(ink), 'Week planner');
+    }
+
+    case 'todo': {
+      const title = w || 'Things to do';
+      const size = fit(title, 110, 8);
+      let body = '';
+      for (let half = 0; half < 2; half++) {
+        const y0 = 12 + half * 139;
+        body += `<rect x="15" y="${y0}" width="180" height="131" rx="6" fill="#fff" stroke="${look.accent}" stroke-width=".7"/>` +
+          `<path d="M21 ${y0} H189 A6 6 0 0 1 195 ${y0 + 6} V${y0 + 20} H15 V${y0 + 6} A6 6 0 0 1 21 ${y0}Z" fill="url(#p${half + 1})"/>`;
+        const tx = o.me ? 45 : 22;
+        if (o.me) body += `<circle cx="30" cy="${y0 + 20}" r="11" fill="#fff"/>` + disc(look, 30, y0 + 20, 9.8, `t${half}`);
+        body += `<rect x="${tx - 3}" y="${y0 + 4.5}" width="${Math.min(145, title.length * size * 0.6 + 7)}" height="11" rx="5.5" fill="#fff"/>` +
+          `<text x="${tx}" y="${y0 + 12.7}" font-size="${size}" font-weight="900" fill="${ink}">${esc(title)}</text>`;
+        for (let r = 0; r < 10; r++) {
+          const y = y0 + 38 + r * 9.2;
+          body += `<rect x="24" y="${y - 4.2}" width="5" height="5" rx="1.2" fill="none" stroke="${look.accent}" stroke-width=".6"/>` +
+            `<path d="M33 ${y + 0.8} H186" stroke="${ink}" stroke-width=".3" opacity=".35"/>`;
+        }
+      }
+      return page(pat(0.7), body + check(ink), 'To-do lists');
+    }
+
+    case 'tags': {
+      let body = '';
+      const from = w || look.name;
+      for (let i = 0; i < 8; i++) {
+        const x = 15 + (i % 2) * 95;
+        const y = 14 + Math.floor(i / 2) * 67;
+        const shape = `M${x + 12} ${y} H${x + 85} V${y + 60} H${x + 12} L${x} ${y + 48} V${y + 12}Z`;
+        body += `<path d="${shape}" fill="#fff" stroke="${look.accent}" stroke-width=".8"/>` +
+          `<path d="M${x + 12} ${y} H${x + 34} V${y + 60} H${x + 12} L${x} ${y + 48} V${y + 12}Z" fill="url(#${i % 2 ? 'p2' : 'p1'})"/>` +
+          `<circle cx="${x + 8}" cy="${y + 30}" r="2.6" fill="#fff" stroke="${ink}" stroke-width=".4"/>`;
+        if (o.me) body += disc(look, x + 22, y + 30, 10, `g${i}`);
+        body += `<text x="${x + 40}" y="${y + 20}" font-size="5" font-weight="800" fill="${look.accent}">To</text>` +
+          `<path d="M${x + 49} ${y + 20.5} H${x + 80}" stroke="${ink}" stroke-width=".35" opacity=".5"/>` +
+          `<text x="${x + 40}" y="${y + 40}" font-size="5" font-weight="800" fill="${look.accent}">From</text>` +
+          `<text x="${x + 40}" y="${y + 50}" font-size="${fit(from, 40, 8)}" font-weight="900" fill="${ink}">${esc(from)}</text>` +
+          `<path d="M${x + 12} ${y - 1.5} H${x + 86.5} V${y + 61.5} H${x + 12} L${x - 1.5} ${y + 48.5} V${y + 11.5}Z" ${CUT} stroke="${ink}" opacity=".3"/>`;
+      }
+      return page(pat(0.6), body + check(ink), 'Gift tags');
+    }
+
+    case 'door': {
+      const text = w || 'Knock first!';
+      let body = '';
+      for (let i = 0; i < 2; i++) {
+        const x = 15 + i * 93;
+        const y = 12;
+        const cx = x + 43.5;
+        const bg = i ? look.accent : look.paper;
+        const fg = on(bg);
+        const outline = `M${x + 6} ${y} H${x + 81} A6 6 0 0 1 ${x + 87} ${y + 6} V${y + 262} A8 8 0 0 1 ${x + 79} ${y + 270} H${x + 8} A8 8 0 0 1 ${x} ${y + 262} V${y + 6} A6 6 0 0 1 ${x + 6} ${y}Z`;
+        body += `<path d="${outline}" fill="${bg}"/>` +
+          `<path d="M${x + 6} ${y} H${x + 81} A6 6 0 0 1 ${x + 87} ${y + 6} V${y + 70} H${x} V${y + 6} A6 6 0 0 1 ${x + 6} ${y}Z" fill="url(#p${i + 1})"/>` +
+          `<circle cx="${cx}" cy="${y + 30}" r="17" fill="#fff" stroke="${ink}" stroke-width=".4" stroke-dasharray="2 1.6"/>` +
+          `<path d="M${cx} ${y} V${y + 13}" stroke="${ink}" stroke-width=".4" stroke-dasharray="2 1.6"/>` +
+          `<text x="${cx}" y="${y + 88}" text-anchor="middle" font-size="7" font-weight="800" fill="${fg}" opacity=".85">${esc(look.name)}'s room</text>` +
+          `<text x="${cx}" y="${y + 106}" text-anchor="middle" font-size="${fit(text, 76, 13)}" font-weight="900" fill="${fg}">${esc(text)}</text>`;
+        if (o.me) body += figure(o.pose === 'mix' ? POSES[(i + 1) % POSES.length].id : o.pose, x + 5, y + 118, 77, 152);
+        body += `<path d="${outline}" ${CUT} stroke="${ink}" opacity=".4"/>`;
+      }
+      return page(pat(1), body, 'Door sign');
+    }
+
+    case 'letter': {
+      let lines = '';
+      for (let y = 78; y <= 262; y += 9) lines += `<path d="M22 ${y} H188" stroke="${look.accent}" stroke-width=".3" opacity=".45"/>`;
+      const tx = o.me ? 60 : 22;
+      const body = `<rect x="10" y="10" width="190" height="6" rx="3" fill="url(#p1)"/>` +
+        (o.me ? logo(look, 18, 21, 38) : '') +
+        `<text x="${tx}" y="38" font-size="${fit(look.brand.name, 80, 12)}" font-weight="900" fill="${ink}">${esc(look.brand.name)}</text>` +
+        `<text x="${tx}" y="46" font-size="4.5" font-weight="700" fill="${look.accent}" letter-spacing=".6">${esc(look.brand.tagline.toUpperCase())}</text>` +
+        (w ? `<text x="188" y="30" text-anchor="end" font-size="${fit(w, 60, 4)}" fill="${ink}" opacity=".75">${esc(w)}</text>` : '') +
+        `<text x="160" y="46" text-anchor="end" font-size="4" fill="${ink}" opacity=".6">Date</text><path d="M162 46.5 H188" stroke="${ink}" stroke-width=".35" opacity=".4"/>` +
+        `<path d="M22 64 H188" stroke="${look.accent}" stroke-width=".8"/>` + lines +
+        `<rect x="10" y="276" width="190" height="6" rx="3" fill="url(#p1)"/>`;
+      return page(pat(0.8), body, 'Letter paper');
+    }
+
+    case 'cards': {
+      let body = '';
+      for (let i = 0; i < 10; i++) {
+        const x = 17.5 + (i % 2) * 90;
+        const y = 10 + Math.floor(i / 2) * 56;
+        body += `<rect x="${x}" y="${y}" width="85" height="55" rx="3" fill="${look.paper}"/>` +
+          `<path d="M${x} ${y + 47} H${x + 85} V${y + 52} A3 3 0 0 1 ${x + 82} ${y + 55} H${x + 3} A3 3 0 0 1 ${x} ${y + 52}Z" fill="url(#p1)"/>` +
+          logo(look, x + 4, y + 4, 39) +
+          `<text x="${x + 46}" y="${y + 21}" font-size="${fit(look.name, 36, 9)}" font-weight="900" fill="${look.ink}">${esc(look.name)}</text>` +
+          `<text x="${x + 46}" y="${y + 28}" font-size="${fit(look.brand.tagline, 36, 3.4)}" font-weight="700" fill="${look.accent}">${esc(look.brand.tagline)}</text>` +
+          (w ? `<text x="${x + 46}" y="${y + 37}" font-size="${fit(w, 36, 3.2)}" fill="${look.ink}" opacity=".8">${esc(w)}</text>` : '') +
+          `<rect x="${x}" y="${y}" width="85" height="55" rx="3" fill="none" stroke="${ink}" stroke-width=".25" opacity=".4"/>`;
+      }
+      return page(pat(0.6), body, 'Business cards');
+    }
+
+    case 'logos': {
+      let body = '';
+      for (let i = 0; i < 12; i++) {
+        const x = 20 + (i % 3) * 60;
+        const y = 16 + Math.floor(i / 3) * 66;
+        body += logo(look, x, y, 52) + `<rect x="${x - 3}" y="${y - 3}" width="58" height="58" rx="10" ${CUT} stroke="${ink}" opacity=".3"/>`;
+      }
+      return page('', body + check(ink), 'Logo stickers');
     }
   }
 }
-
-/** A line that should measure exactly 5 cm, so a ruler can tell whether the printer shrank the page. */
-function check (ink: string): string {
-  return `<g opacity=".55"><path d="M15 288 H65 M15 286 V290 M65 286 V290" stroke="${ink}" stroke-width=".35"/>` +
-    `<text x="68" y="289.5" font-size="3" fill="${ink}" font-family="system-ui, sans-serif">This line should measure 5 cm. If it does not, print at actual size.</text></g>`;
-}
-
-export interface Wrap {
-  /** Width round the thing, and height, in centimetres. */
-  width: number;
-  height: number;
-  tab: boolean;
-  title: string;
-}
-
-/** Room on the page for a wrap, in millimetres, inside the 10 mm margin with space for the notes below. */
-const ROOM_W = 190;
-const ROOM_H = 262;
-
-/** Whether a wrap fits one sheet, and whether it has to be turned sideways to. */
-export function wrapFits (wrap: Wrap): 'upright' | 'sideways' | false {
-  const w = wrap.width * 10 + (wrap.tab ? 10 : 0);
-  const h = wrap.height * 10;
-  if (w <= ROOM_W && h <= ROOM_H) return 'upright';
-  if (h <= ROOM_W && w <= ROOM_H) return 'sideways';
-  return false;
-}
-
-export function wrapSheet (wrap: Wrap, pattern: PatternName, words: string, look: Look): string {
-  const ink = inkOf(look);
-  const tab = wrap.tab ? 10 : 0;
-  const w = Math.max(10, wrap.width * 10);
-  const h = Math.max(10, wrap.height * 10);
-  const fits = wrapFits(wrap);
-  const sideways = fits === 'sideways';
-  // Too big for a sheet: draw what fits and say so, rather than print it shrunk.
-  const pw = sideways ? Math.min(h, ROOM_W) : Math.min(w + tab, ROOM_W);
-  const ph = sideways ? Math.min(w + tab, ROOM_H) : Math.min(h, ROOM_H);
-  const x = (W - pw) / 2;
-  const y = 16;
-
-  // Drawn upright at the origin, then turned and placed.
-  const bw = sideways ? ph : pw;
-  const bh = sideways ? pw : ph;
-  const panel = Math.max(0, bw - tab);
-  const text = words.trim();
-  const size = text ? fit(text, panel * 0.8, Math.min(16, bh * 0.28)) : 0;
-  let inner = `<rect width="${panel}" height="${bh}" fill="url(#p1)"/>`;
-  if (text) {
-    const band = size * 1.8;
-    inner += `<rect x="${panel * 0.08}" y="${(bh - band) / 2}" width="${panel * 0.84}" height="${band}" rx="${band / 2}" fill="#fff" opacity=".92"/>` +
-      `<text x="${panel / 2}" y="${bh / 2 + size * 0.35}" text-anchor="middle" font-size="${size}" font-weight="700" fill="${ink}">${esc(text)}</text>`;
-  }
-  if (tab) {
-    inner += `<rect x="${panel}" width="${tab}" height="${bh}" fill="url(#glue)"/>` +
-      `<text transform="translate(${panel + tab / 2 + 1.4} ${bh / 2}) rotate(-90)" text-anchor="middle" font-size="3.6" fill="${ink}" font-family="system-ui, sans-serif">glue here</text>` +
-      `<path d="M${panel} 0 V${bh}" stroke="${ink}" stroke-width=".3" stroke-dasharray="1 1" opacity=".6"/>`;
-  }
-  inner += `<rect x="-1" y="-1" width="${bw + 2}" height="${bh + 2}" ${CUT} stroke="${ink}" opacity=".5"/>`;
-  // As many as fit down the page, so a small wrap does not waste the sheet.
-  const GAP = 8;
-  const copies = fits ? Math.max(1, Math.floor((ROOM_H + GAP) / (ph + GAP))) : 1;
-  const place = (k: number): string => {
-    const yk = y + k * (ph + GAP);
-    return sideways ? `translate(${x + pw} ${yk}) rotate(90)` : `translate(${x} ${yk})`;
-  };
-
-  const glue = `<pattern id="glue" width="3" height="3" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">` +
-    `<rect width="3" height="3" fill="#fff"/><rect width="1" height="3" fill="${ink}" opacity=".15"/></pattern>`;
-  const size2 = `${fmt(wrap.width)} × ${fmt(wrap.height)} cm`;
-  const note = fits
-    ? `${esc(wrap.title)} · ${size2}${sideways ? ' · turned sideways to fit' : ''}${copies > 1 ? ` · ${copies} on this sheet` : ''}`
-    : `${esc(wrap.title)} · ${size2} is bigger than a sheet of paper, so only part of it is here`;
-  const body = Array.from({ length: copies }, (_, k) => `<g transform="${place(k)}">${inner}</g>`).join('') +
-    `<text x="${W / 2}" y="281" text-anchor="middle" font-size="4" fill="${ink}" opacity=".75" font-family="system-ui, sans-serif">${note}</text>` +
-    check(ink);
-  return page(defs('p1', pattern, look, 0.8) + glue, body, `${wrap.title} wrap`);
-}
-
-export const fmt = (n: number): string => (Math.round(n * 10) / 10).toString();

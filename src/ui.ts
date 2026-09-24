@@ -1,0 +1,115 @@
+/**
+ * Pieces every room uses: the colour strip, the pattern and pose pickers,
+ * fields, the print button, and remembered choices.
+ *
+ * The colour strip sits beside the preview in every tool, so trying colours
+ * is one tap from the thing being made rather than a trip to Make it yours
+ * and back. It changes the same colours Make it yours does, so a colour
+ * picked here is her colour everywhere.
+ */
+import { look, setLook, useScheme, SCHEMES, PALETTE } from './look';
+import { PATTERNS, defs, type PatternName } from './patterns';
+import { POSES, img, type PoseId } from './character';
+import { ICONS } from './icons';
+
+export const esc = (s: string): string =>
+  s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string);
+
+let redraw: () => void = () => {};
+
+/** Main sets this: it redraws the current room without jumping to the top. */
+export function onRefresh (fn: () => void): void { redraw = fn; }
+export function refresh (): void { redraw(); }
+
+/** Small remembered choices, so a sheet she was halfway through is still there tomorrow. */
+export function remembered<T extends object> (key: string, start: T): { get: () => T; set: (c: Partial<T>) => void } {
+  let value = start;
+  try { value = { ...start, ...JSON.parse(localStorage.getItem(key) ?? '{}') }; } catch { /* start fresh */ }
+  return {
+    get: () => value,
+    set: (c) => {
+      value = { ...value, ...c };
+      try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* keep it for this visit */ }
+    }
+  };
+}
+
+export function field (label: string, input: string): string {
+  return `<label class="field"><span>${label}</span>${input}</label>`;
+}
+
+export function heading (text: string): string {
+  return `<h2 class="step">${text}</h2>`;
+}
+
+export function printButton (label = 'Print it'): string {
+  return `<button type="button" class="go print">${ICONS.print}<span>${label}</span></button>`;
+}
+
+export function wirePrint (root: HTMLElement): void {
+  root.querySelectorAll('.print').forEach((b) => b.addEventListener('click', () => window.print()));
+}
+
+/** Buttons that behave as one choice, as radio buttons do. */
+export function wireChoice (root: HTMLElement, attr: string, pick: (value: string) => void): void {
+  root.querySelectorAll<HTMLButtonElement>(`[data-${attr}]`).forEach((b) =>
+    b.addEventListener('click', () => pick(b.dataset[attr.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase())]!)));
+}
+
+/* Colours ---------------------------------------------------------------- */
+
+/** `sets` false leaves out the row of colour sets, for pages that show them bigger already. */
+export function colourBar (sets = true): string {
+  const l = look();
+  const swatches = (key: 'accent' | 'accent2'): string =>
+    PALETTE.map((c) => `<button type="button" class="swatch" data-${key}="${c}" style="--c:${c}" aria-label="${c}" aria-pressed="${l[key].toUpperCase() === c}"></button>`).join('') +
+    `<label class="swatch swatch--own" title="Any colour"><input type="color" data-own="${key}" value="${l[key]}"><span aria-hidden="true">+</span></label>`;
+  return `<section class="colourbar" aria-label="Colours">
+    ${sets ? `<div class="cb-row"><span class="cb-label">Colours</span><div class="cb-scroll">${SCHEMES.map((s) =>
+      `<button type="button" class="set" data-scheme="${s.id}" aria-pressed="${s.id === l.scheme}" title="${s.label}" style="--p:${s.paper}">` +
+      `<i style="background:${s.accent}"></i><i style="background:${s.accent2}"></i><span>${s.label}</span></button>`).join('')}</div></div>` : ''}
+    <div class="cb-row"><span class="cb-label">Main</span><div class="cb-scroll">${swatches('accent')}</div></div>
+    <div class="cb-row"><span class="cb-label">Second</span><div class="cb-scroll">${swatches('accent2')}</div></div>
+  </section>`;
+}
+
+export function wireColours (root: HTMLElement): void {
+  root.querySelectorAll<HTMLButtonElement>('.colourbar [data-scheme]').forEach((b) =>
+    b.addEventListener('click', () => { useScheme(b.dataset.scheme!); refresh(); }));
+  root.querySelectorAll<HTMLButtonElement>('.colourbar [data-accent]').forEach((b) =>
+    b.addEventListener('click', () => { setLook({ accent: b.dataset.accent!, scheme: 'own' }); refresh(); }));
+  root.querySelectorAll<HTMLButtonElement>('.colourbar [data-accent2]').forEach((b) =>
+    b.addEventListener('click', () => { setLook({ accent2: b.dataset.accent2!, scheme: 'own' }); refresh(); }));
+  root.querySelectorAll<HTMLInputElement>('.colourbar [data-own]').forEach((input) => {
+    input.addEventListener('input', () => setLook({ [input.dataset.own!]: input.value, scheme: 'own' }));
+    input.addEventListener('change', refresh);
+  });
+  // Keep the chosen colour set in view, rather than scrolled off to the side.
+  root.querySelectorAll<HTMLElement>('.colourbar [aria-pressed="true"]').forEach((el) =>
+    el.scrollIntoView({ block: 'nearest', inline: 'center' }));
+}
+
+/* Patterns --------------------------------------------------------------- */
+
+export function patternPicker (): string {
+  const l = look();
+  return `<div class="chips chips--patterns" role="radiogroup" aria-label="Pattern">${PATTERNS.map((p) =>
+    `<button type="button" class="chip chip--pattern" role="radio" data-pattern="${p.id}" aria-checked="${p.id === l.pattern}">` +
+    `<svg viewBox="0 0 30 30" aria-hidden="true"><defs>${defs(`sw-${p.id}`, p.id, l, 0.9)}</defs>` +
+    `<rect width="30" height="30" rx="8" fill="url(#sw-${p.id})"/></svg><span>${p.label}</span></button>`).join('')}</div>`;
+}
+
+export function wirePatterns (root: HTMLElement): void {
+  wireChoice(root, 'pattern', (p) => { setLook({ pattern: p as PatternName }); refresh(); });
+}
+
+/* Poses ------------------------------------------------------------------ */
+
+export function posePicker (current: PoseId | 'mix', mix: boolean, attr = 'pose'): string {
+  return `<div class="poses" role="radiogroup" aria-label="Which you">${POSES.map((p) =>
+    `<button type="button" class="pose" role="radio" data-${attr}="${p.id}" aria-checked="${p.id === current}" title="${p.label}">` +
+    `${img(p.id, 'pose-img')}<span>${p.label}</span></button>`).join('')}${mix
+    ? `<button type="button" class="pose pose--mix" role="radio" data-${attr}="mix" aria-checked="${current === 'mix'}">` +
+      `<span class="mix-stack">${POSES.slice(0, 3).map((p) => img(p.id, 'pose-img')).join('')}</span><span>All of me</span></button>`
+    : ''}</div>`;
+}

@@ -1,35 +1,59 @@
 # Jazz's Studio
 
-A studio for designing and printing stationery, making things out of boxes
-and cartons, and keeping a shelf of everything made. Built for Jazz, who is
-ten, loves stationery and turns the recycling into things.
+A studio for Jazz, who is ten, loves stationery, and wanted something of her
+own after her brother got Sukhi Play. She designs and prints her own
+stationery with her own character on it, makes a brand, plays with secret
+codes and story ideas, and keeps a shelf of what she made.
 
-This is the first version: the structure, so Jazz can see what it will be and
-tell us what she wants it to be. Most of what comes next is hers to decide.
+Dark by default and nothing girly, because that is what she asked for.
 
 ## The rooms
 
 | Room | What it does |
 | --- | --- |
-| Stationery | Stickers, bookmarks, name labels and diary pages, in her pattern and her words, printed on A4 |
-| Make from a box | Measure a toilet roll, cereal box or lid, and print a wrap that fits it, with the steps to make it |
-| My makes | Photos of finished things, with a title and a note, kept on this device |
-| Make it yours | Her name, her colours, her lettering, her character, and a box for ideas and wishes |
+| Stationery | Me stickers, pattern stickers, name labels, bookmarks, a diary cover and diary pages, a week planner, to-do lists, gift tags, door signs and letter paper, all on A4 |
+| My brand | Her logo in four styles (badge, stamp, ribbon, initial), business cards and logo stickers. The logo goes on her diary cover and letter paper too |
+| Play | A name poster, secret codes in pigpen with a key for a friend, story sparks that go straight onto a diary page, and a doodle pad |
+| My makes | Photos of finished things and kept doodles, on this device |
+| Make it yours | Which pose says hello and which goes on her stationery, her name, lettering, colours, favourite pattern and background |
 
-Everything she picks in Make it yours changes every room and every printed
-sheet. **Copy my picks** turns her choices and wishes into text that can be
-sent to whoever is building the next version.
+The colour strip sits on top of the preview in every tool, so a colour can be
+tried where it shows instead of in another room. It changes the same colours
+Make it yours does.
+
+## Her character
+
+Six poses of the same girl, drawn from a photo of Jazz: smiling, waving,
+drawing, big idea, wink and cool. Drawing is the app icon; waving says hello
+on Home; smiling goes on her stationery. She can change the last two in
+Make it yours.
+
+Each pose was rendered on flat magenta and cut out locally:
+
+```
+python3 scripts/cutout.py pose.jpg --name hello
+python3 scripts/cutout.py pose.jpg --name draw --icon   # also rebuilds the app icons
+```
+
+Magenta appears nowhere on her, so it keys out cleanly, and the script takes
+the magenta light the render bounces onto her hair back out as well.
+
+**The character artwork is not covered by the code's licence.** It is a
+likeness of a real child. `src/assets/jazz/`, `public/*.png` and
+`scripts/icon-1024.png` are © Mandeep Singh, all rights reserved, and are not
+to be reused, modified or redistributed.
 
 ## Printing
 
 Sheets are drawn in millimetres on an A4 page. Print at **actual size**
-(100%, not "fit to page"): each sheet has a line that should measure exactly
-5 cm, so a ruler can check. Nothing is closer than 10 mm to the edge.
+(100%, not "fit to page"): most sheets have a line that should measure
+exactly 5 cm, so a ruler can check. Nothing is closer than 10 mm to the edge.
 
-## Her character
+## Parked
 
-Box buddy is a stand-in. Jazz draws her own character on paper, and the one
-she likes best replaces `src/character.ts`.
+Make from a box (printable wraps for toilet rolls, cereal boxes and lids) is
+parked: Jazz found it unclear. It is in the first commit, `f82bfc2`, to bring
+back from if she wants it.
 
 ## Rules it keeps
 
@@ -46,4 +70,5 @@ npm run build    # into dist/
 
 ## Licence
 
-Sukhi Play Personal Use Licence 1.0. See [LICENSE](LICENSE).
+The code is under the Sukhi Play Personal Use Licence 1.0. See
+[LICENSE](LICENSE). The character artwork is not; see above.

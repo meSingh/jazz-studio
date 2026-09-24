@@ -1,25 +1,45 @@
 /**
  * How the studio looks, which is Jazz's to decide.
  *
- * Her name, her colours and her lettering, kept on this device and applied to
- * everything: the screens, and every sheet she prints. The presets are only a
- * place to start from. The point of the "Make it yours" screen is that she
- * changes them, and whatever she picks there is the data the next version of
- * this studio is designed around.
+ * Her name, colours, lettering, favourite pattern, which of her character's
+ * poses to use, and her logo, kept on this device and applied to everything:
+ * every room, and every sheet she prints.
+ *
+ * She wanted darker colours and nothing girly, so the sets start dark and
+ * there are a lot of them. Any colour can be changed from any tool, not only
+ * from Make it yours, because going somewhere else to try a colour and coming
+ * back is exactly the kind of thing that stops a ten-year-old trying things.
  */
+import type { PatternName } from './patterns';
+import type { PoseId } from './character';
+
+export type Lettering = 'rounded' | 'block' | 'marker' | 'hand' | 'typewriter' | 'mono' | 'classic';
+export type Backdrop = 'plain' | 'stars' | 'grid' | 'dots';
+export type LogoStyle = 'badge' | 'stamp' | 'ribbon' | 'monogram';
+
+export interface Brand {
+  name: string;
+  tagline: string;
+  style: LogoStyle;
+  /** Her character in the logo, or her initial. */
+  me: boolean;
+}
 
 export interface Look {
   name: string;
-  /** Four colours: the page, the ink, and two to play with. */
   paper: string;
   ink: string;
   accent: string;
   accent2: string;
-  lettering: Lettering;
   scheme: string;
+  lettering: Lettering;
+  pattern: PatternName;
+  /** The pose that says hello on Home, and the one that goes on her stationery. */
+  greeter: PoseId;
+  pose: PoseId;
+  backdrop: Backdrop;
+  brand: Brand;
 }
-
-export type Lettering = 'rounded' | 'marker' | 'classic';
 
 export interface Scheme {
   id: string;
@@ -30,36 +50,77 @@ export interface Scheme {
   accent2: string;
 }
 
-/**
- * Places to start. Named for how they feel rather than what colours they are,
- * because "Berry jam" is a thing a ten-year-old picks and "#B83A6B" is not.
- */
+/** Dark first, as she asked. Two light ones at the end for daylight and printing. */
 export const SCHEMES: Scheme[] = [
-  { id: 'scrapbook', label: 'Scrapbook', paper: '#FBF4E6', ink: '#3B2F2A', accent: '#E0704F', accent2: '#7FA67E' },
-  { id: 'berry', label: 'Berry jam', paper: '#FFF1F4', ink: '#3A1830', accent: '#C23B6E', accent2: '#8C5BD6' },
-  { id: 'seaside', label: 'Seaside', paper: '#EEF8FA', ink: '#123B4A', accent: '#1F8FA8', accent2: '#F2A541' },
-  { id: 'meadow', label: 'Meadow', paper: '#F3F8EC', ink: '#253320', accent: '#5C9A3B', accent2: '#E7B93E' },
-  { id: 'midnight', label: 'Midnight', paper: '#1E1B33', ink: '#F4EFFF', accent: '#FFB86B', accent2: '#7FD6C2' },
-  { id: 'candy', label: 'Candy floss', paper: '#FFF6FB', ink: '#402A4A', accent: '#FF8FC0', accent2: '#7BC7FF' }
+  { id: 'midnight', label: 'Midnight', paper: '#0F172A', ink: '#EAF0FF', accent: '#4F8CFF', accent2: '#FFC857' },
+  { id: 'forest', label: 'Forest', paper: '#0F2A1F', ink: '#E9F5EE', accent: '#3DDC84', accent2: '#F2C14E' },
+  { id: 'graphite', label: 'Graphite', paper: '#1B1D22', ink: '#F1F1F1', accent: '#C8F560', accent2: '#7DD3FC' },
+  { id: 'ocean', label: 'Deep ocean', paper: '#0B2530', ink: '#E3F6F8', accent: '#2EC4B6', accent2: '#FF9F1C' },
+  { id: 'storm', label: 'Storm', paper: '#262B36', ink: '#EEF1F6', accent: '#9AA8FF', accent2: '#5EEAD4' },
+  { id: 'ember', label: 'Ember', paper: '#1E1414', ink: '#FBEFE7', accent: '#FF7A3D', accent2: '#FFD166' },
+  { id: 'galaxy', label: 'Galaxy', paper: '#15102B', ink: '#EEEAFE', accent: '#7C5CFF', accent2: '#22D3EE' },
+  { id: 'stealth', label: 'Stealth', paper: '#0A0A0A', ink: '#F5F5F5', accent: '#39FF88', accent2: '#A3A3A3' },
+  { id: 'royal', label: 'Royal', paper: '#14213D', ink: '#F4F1E8', accent: '#FCA311', accent2: '#E5E5E5' },
+  { id: 'moss', label: 'Moss and copper', paper: '#1F2A1B', ink: '#EFF3E6', accent: '#C97B4A', accent2: '#9CC47A' },
+  { id: 'arctic', label: 'Arctic', paper: '#EEF3F7', ink: '#16212E', accent: '#2563EB', accent2: '#0EA5A4' },
+  { id: 'sand', label: 'Sand', paper: '#F4EFE6', ink: '#2B2620', accent: '#1F7A5A', accent2: '#E07A3F' }
 ];
 
-export const LETTERING: Record<Lettering, { label: string; stack: string }> = {
+/** Loose colours to pick a main or second colour from, beyond the sets. */
+export const PALETTE = [
+  '#4F8CFF', '#2563EB', '#1E3A8A', '#22D3EE', '#2EC4B6', '#0EA5A4',
+  '#3DDC84', '#39FF88', '#C8F560', '#9CC47A', '#1F7A5A', '#FFC857',
+  '#FCA311', '#FF9F1C', '#FF7A3D', '#E4572E', '#D62828', '#9B2226',
+  '#7C5CFF', '#9AA8FF', '#5EEAD4', '#C97B4A', '#A3A3A3', '#F5F5F5'
+];
+
+export const LETTERING: Record<Lettering, { label: string; stack: string; weight: number }> = {
   // System faces only. Nothing is fetched, so nothing can fail to arrive.
-  rounded: { label: 'Rounded', stack: 'ui-rounded, "SF Pro Rounded", "Nunito", "Segoe UI", system-ui, sans-serif' },
-  marker: { label: 'Marker', stack: '"Marker Felt", "Chalkboard SE", "Segoe Print", "Comic Sans MS", cursive' },
-  classic: { label: 'Storybook', stack: '"Iowan Old Style", "Palatino", "Book Antiqua", Georgia, serif' }
+  rounded: { label: 'Rounded', stack: 'ui-rounded, "SF Pro Rounded", "Nunito", "Segoe UI", system-ui, sans-serif', weight: 800 },
+  block: { label: 'Block', stack: '"Arial Black", "Helvetica Neue", Impact, "Segoe UI Black", sans-serif', weight: 900 },
+  marker: { label: 'Marker', stack: '"Marker Felt", "Chalkboard SE", "Segoe Print", "Comic Sans MS", cursive', weight: 700 },
+  hand: { label: 'Handwritten', stack: '"Bradley Hand", "Segoe Script", "Noteworthy", "Comic Sans MS", cursive', weight: 700 },
+  typewriter: { label: 'Typewriter', stack: '"American Typewriter", "Courier New", Courier, monospace', weight: 700 },
+  mono: { label: 'Techy', stack: 'ui-monospace, "SF Mono", Menlo, Consolas, monospace', weight: 700 },
+  classic: { label: 'Storybook', stack: '"Iowan Old Style", Palatino, "Book Antiqua", Georgia, serif', weight: 700 }
 };
+
+export const BACKDROPS: Array<{ id: Backdrop; label: string }> = [
+  { id: 'plain', label: 'Plain' },
+  { id: 'stars', label: 'Stars' },
+  { id: 'grid', label: 'Grid paper' },
+  { id: 'dots', label: 'Dots' }
+];
 
 const KEY = 'jazz-studio-look';
 
-const start = (): Look => ({ name: 'Jazz', ...SCHEMES[0], scheme: SCHEMES[0].id, lettering: 'rounded' });
+const start = (): Look => {
+  const s = SCHEMES[0];
+  return {
+    name: 'Jazz',
+    paper: s.paper, ink: s.ink, accent: s.accent, accent2: s.accent2, scheme: s.id,
+    lettering: 'rounded',
+    pattern: 'zigzag',
+    greeter: 'hello',
+    pose: 'portrait',
+    backdrop: 'stars',
+    brand: { name: 'Jazz Studio', tagline: 'Artist · Maker · Writer', style: 'badge', me: true }
+  };
+};
 
 let current: Look = load();
 
 function load (): Look {
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) return { ...start(), ...JSON.parse(raw) };
+    if (raw) {
+      const saved = JSON.parse(raw) as Partial<Look>;
+      const base = start();
+      const merged = { ...base, ...saved, brand: { ...base.brand, ...(saved.brand ?? {}) } };
+      // A lettering from an older version that no longer exists falls back.
+      if (!(merged.lettering in LETTERING)) merged.lettering = base.lettering;
+      return merged;
+    }
   } catch { /* private window or storage switched off: start fresh */ }
   return start();
 }
@@ -67,7 +128,7 @@ function load (): Look {
 export function look (): Look { return current; }
 
 export function setLook (change: Partial<Look>): void {
-  current = { ...current, ...change };
+  current = { ...current, ...change, brand: { ...current.brand, ...(change.brand ?? {}) } };
   try { localStorage.setItem(KEY, JSON.stringify(current)); } catch { /* keep it for this visit */ }
   apply();
 }
@@ -77,19 +138,31 @@ export function useScheme (id: string): void {
   if (s) setLook({ paper: s.paper, ink: s.ink, accent: s.accent, accent2: s.accent2, scheme: s.id });
 }
 
+export function reset (): void {
+  current = start();
+  try { localStorage.removeItem(KEY); } catch { /* nothing to clear */ }
+  apply();
+}
+
 /** Puts the look on the page as CSS variables, which is all the styling reads. */
 export function apply (): void {
   const r = document.documentElement.style;
-  const dark = light(current.paper) < 0.35;
+  const dark = light(current.paper) < 0.4;
+  const l = LETTERING[current.lettering];
   r.setProperty('--paper', current.paper);
   r.setProperty('--ink', current.ink);
   r.setProperty('--accent', current.accent);
   r.setProperty('--accent2', current.accent2);
-  r.setProperty('--lettering', LETTERING[current.lettering].stack);
+  r.setProperty('--lettering', l.stack);
+  r.setProperty('--heavy', String(l.weight));
   // Cards sit a little lighter than the page, whichever way round she picked.
-  r.setProperty('--card', mix(current.paper, '#FFFFFF', dark ? 0.1 : 0.6));
-  r.setProperty('--on-accent', light(current.accent) > 0.6 ? current.ink : '#FFFFFF');
+  r.setProperty('--card', mix(current.paper, '#FFFFFF', dark ? 0.07 : 0.6));
+  r.setProperty('--card2', mix(current.paper, '#FFFFFF', dark ? 0.13 : 0.85));
+  r.setProperty('--on-accent', light(current.accent) > 0.6 ? '#111111' : '#FFFFFF');
+  r.setProperty('--on-accent2', light(current.accent2) > 0.6 ? '#111111' : '#FFFFFF');
   document.documentElement.dataset.dark = dark ? 'yes' : 'no';
+  document.documentElement.dataset.backdrop = current.backdrop;
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', current.paper);
 }
 
 function rgb (hex: string): [number, number, number] {
