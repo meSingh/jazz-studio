@@ -8,7 +8,7 @@
 import { look, setLook, type LogoStyle } from '../look';
 import { logoSvg, LOGO_STYLES } from '../brand';
 import { BRAND_KINDS } from '../sheets';
-import { esc, field, heading, wireChoice, remembered, refresh } from '../ui';
+import { esc, field, heading, wireChoice, posePicker, remembered, refresh } from '../ui';
 import { bench, type BenchState } from './bench';
 
 const state = remembered<BenchState>('jazz-studio-brand-bench', { kind: 'cards', me: true, pose: 'portrait', words: {} });
@@ -30,6 +30,7 @@ export function brandRoom (main: HTMLElement): void {
         <button type="button" class="chip" role="radio" data-middle="me" aria-checked="${b.me}">Me in the middle</button>
         <button type="button" class="chip" role="radio" data-middle="letter" aria-checked="${!b.me}">My initial</button>
       </div>
+      ${b.me ? posePicker(b.pose ?? l.pose, false, 'logo-pose') : ''}
       <p class="hint">Your logo goes on your diary cover, letter paper and business cards.</p>
     </div>
   </section>`;
@@ -37,6 +38,7 @@ export function brandRoom (main: HTMLElement): void {
 
   wireChoice(main, 'logo', (s) => { setLook({ brand: { ...look().brand, style: s as LogoStyle } }); refresh(); });
   wireChoice(main, 'middle', (m) => { setLook({ brand: { ...look().brand, me: m === 'me' } }); refresh(); });
+  wireChoice(main, 'logo-pose', (p) => { setLook({ brand: { ...look().brand, pose: p } }); refresh(); });
   const text = (sel: string, key: 'name' | 'tagline'): void => {
     const input = main.querySelector<HTMLInputElement>(sel)!;
     input.addEventListener('change', () => { setLook({ brand: { ...look().brand, [key]: input.value.trim() } }); refresh(); });

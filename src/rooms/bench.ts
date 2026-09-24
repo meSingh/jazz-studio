@@ -4,7 +4,8 @@
  *
  * Stationery and My brand both print sheets, so both use this. Each keeps its
  * own remembered state: which sheet, her words for each one, whether she is
- * on it, and which of her poses.
+ * on it, and which character. That choice lives here, in the tool, rather
+ * than in Make it yours, and starts as the character she chose there.
  */
 import { look } from '../look';
 import { sheet, type Kind, type KindInfo, type Options } from '../sheets';
@@ -38,8 +39,8 @@ export function bench (main: HTMLElement, kinds: KindInfo[], state: Bench, top =
       <div class="chips kinds" role="radiogroup" aria-label="What to make">${kinds.map((k) =>
         `<button type="button" class="chip" role="radio" data-kind="${k.id}" aria-checked="${k.id === kind.id}">${k.label}</button>`).join('')}</div>
       <p class="hint">${kind.blurb}</p>
-      ${kind.pose ? heading('Which you') + posePicker(s.pose === 'mix' && kind.id !== 'faces' ? l.pose : s.pose, kind.id === 'faces') : ''}
       ${kind.me ? `<label class="tick"><input type="checkbox" class="me" ${s.me ? 'checked' : ''}><span>Put me on it</span></label>` : ''}
+      ${kind.pose || (kind.me && s.me) ? heading('Which you') + posePicker(s.pose === 'mix' && kind.id !== 'faces' ? l.pose : s.pose, kind.id === 'faces') : ''}
       ${heading('Pattern')}
       ${patternPicker()}
       ${kind.words ? heading('Words') + field(kind.words, `<input class="words" maxlength="40" placeholder="${esc(kind.start(l))}" value="${esc(s.words[kind.id] ?? '')}">`) : ''}
@@ -56,6 +57,7 @@ export function bench (main: HTMLElement, kinds: KindInfo[], state: Bench, top =
   wirePatterns(main);
   wireColours(main);
   main.querySelector<HTMLInputElement>('.me')?.addEventListener('change', (e) => {
+    // A redraw, not just the sheet: ticking it brings the character picker in.
     state.set({ me: (e.target as HTMLInputElement).checked });
     refresh();
   });

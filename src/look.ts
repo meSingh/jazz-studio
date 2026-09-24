@@ -1,9 +1,9 @@
 /**
  * How the studio looks, which is Jazz's to decide.
  *
- * Her name, colours, lettering, favourite pattern, which of her character's
- * poses to use, and her logo, kept on this device and applied to everything:
- * every room, and every sheet she prints.
+ * Her name, colours, lettering, pattern, her character, and her logo, kept on
+ * this device and applied to everything: every room, and every sheet she
+ * prints.
  *
  * She wanted darker colours and nothing girly, so the sets start dark and
  * there are a lot of them. Any colour can be changed from any tool, not only
@@ -23,6 +23,8 @@ export interface Brand {
   style: LogoStyle;
   /** Her character in the logo, or her initial. */
   me: boolean;
+  /** Which character is in the logo, when it is not the one in Make it yours. */
+  pose?: PoseId;
 }
 
 export interface Look {
@@ -34,8 +36,10 @@ export interface Look {
   scheme: string;
   lettering: Lettering;
   pattern: PatternName;
-  /** The pose that says hello on Home, and the one that goes on her stationery. */
-  greeter: PoseId;
+  /**
+   * Their character: the one that says hello on Home, and the one each tool
+   * starts with. A sheet can use another; that choice stays in the tool.
+   */
   pose: PoseId;
   backdrop: Backdrop;
   brand: Brand;
@@ -103,8 +107,7 @@ const start = (): Look => {
     paper: s.paper, ink: s.ink, accent: s.accent, accent2: s.accent2, scheme: s.id,
     lettering: 'rounded',
     pattern: 'zigzag',
-    greeter: 'hello',
-    pose: 'portrait',
+    pose: 'hello',
     backdrop: 'stars',
     keepJazz: false,
     brand: { name: 'Jazz Studio', tagline: 'Artist · Maker · Writer', style: 'badge', me: true }

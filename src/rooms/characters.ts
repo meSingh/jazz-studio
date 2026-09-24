@@ -1,27 +1,29 @@
 /**
- * Your character, in Make it yours: Jazz's poses, or a family's own.
+ * The Character tab of Make it yours: who their character is.
  *
- * A family adds a character by choosing a picture, dropping one on the tile,
- * or pasting one. Paste and drop matter because inside Sukhi Play no page may
+ * One list, one choice. The character they tap is theirs: it says hello on
+ * Home and is where every tool starts. A tool can put another on a sheet; that
+ * choice stays in the tool, where it is needed.
+ *
+ * A family adds their own by choosing a picture, dropping one on the tile, or
+ * pasting one. Paste and drop matter because inside Sukhi Play no page may
  * open a file browser, so there a grown-up copies the picture and presses
- * Ctrl+V (Cmd+V on a Mac) here. The background is cut out on this device by
- * cutout.ts; nothing is sent anywhere.
+ * Ctrl+V (Cmd+V on a Mac). The background is cut out on this device by
+ * cutout.ts; nothing is sent anywhere. Once they have added any, theirs are
+ * the character list; a box keeps Jazz's too. Their own can be renamed,
+ * nudged when the face-finding framed the face badly, and removed.
  *
- * Once they have added any, theirs are the character list; a box keeps
- * Jazz's too. Their own can be renamed, removed (two taps), and nudged when
- * the face-finding framed the face badly.
- *
- * The grown-up guide explains how to make a character like Jazz's from a
- * photo with Google Gemini, with the prompts that worked for hers, and says
- * plainly that the photo goes to Google when they do.
+ * The grown-up guide explains how to make one from a photo with Google
+ * Gemini, with the prompts that worked for Jazz's, and says plainly that the
+ * photo goes to Google when they do.
  */
 import { look, setLook } from '../look';
 import {
-  poses, hasOwn, faceImg, saveOwn, removeOwn, nudgeOwn, renameOwn, setKeepJazz, type PoseId
+  poses, pose, hasOwn, img, faceImg, saveOwn, removeOwn, nudgeOwn, renameOwn, setKeepJazz
 } from '../character';
 import { cutOut } from '../cutout';
 import { ICONS } from '../icons';
-import { esc, heading, posePicker, wireChoice, refresh, inSukhiPlay } from '../ui';
+import { esc, refresh, inSukhiPlay } from '../ui';
 
 const FIRST = 'Turn the child in the attached photo into a 3D animated-film character, like one from a ' +
   'family animated film: soft and rounded, friendly, with big expressive eyes. Keep their real likeness: ' +
@@ -36,71 +38,91 @@ const MORE = 'Using the attached character, make the same character again: the i
 
 const POSE_IDEAS = 'holding a pencil and a sketchbook · pointing up with a big idea · winking with a thumbs up · arms crossed, looking cool';
 
+const GEMINI = 'https://gemini.google.com/';
+
 const key = /Mac|iPhone|iPad/.test(navigator.platform) ? 'Cmd+V' : 'Ctrl+V';
 
-export function charactersCard (): string {
+export function characterTab (): string {
   const l = look();
   const list = poses();
-  const own = hasOwn();
+  const mine = pose(l.pose);
   const addHow = inSukhiPlay
     ? `Copy a picture, then press ${key} here`
     : `Choose a picture, drop one here, or copy one and press ${key}`;
-  return `<section class="card card--wide chars-card">
-    ${heading('Your character')}
-    <div class="chars">
-      ${list.map((p) => `<figure class="char${p.own ? ' char--own' : ''}">
-        ${faceImg(p.id, 'char-face')}
-        ${p.own
-          ? `<input class="char-name" data-rename="${p.id}" value="${esc(p.label)}" maxlength="20" aria-label="Name">
-             <div class="char-tools">
-               <button type="button" class="mini" data-nudge="${p.id}" data-dy="-0.06" title="Move the face up" aria-label="Move up">${ICONS.up}</button>
-               <button type="button" class="mini" data-nudge="${p.id}" data-dy="0.06" title="Move the face down" aria-label="Move down">${ICONS.down}</button>
-               <button type="button" class="mini" data-nudge="${p.id}" data-zoom="0.88" title="Closer" aria-label="Closer">${ICONS.bigger}</button>
-               <button type="button" class="mini" data-nudge="${p.id}" data-zoom="1.14" title="Further away" aria-label="Further away">${ICONS.smaller}</button>
-               <button type="button" class="mini mini--bin" data-drop="${p.id}" title="Remove" aria-label="Remove">${ICONS.bin}</button>
-             </div>`
-          : `<figcaption>${esc(p.label)}</figcaption>`}
-      </figure>`).join('')}
-      <label class="char char--add" tabindex="0">
-        ${inSukhiPlay ? '' : '<input type="file" accept="image/*" multiple class="char-file">'}
-        <span class="char-plus">${ICONS.plus}</span>
-        <b>Add a character</b>
-        <small>${addHow}</small>
-      </label>
-    </div>
-    <p class="hint char-status" role="status"></p>
-    ${own ? `<label class="tick"><input type="checkbox" class="keep-jazz" ${l.keepJazz ? 'checked' : ''}><span>Keep Jazz's characters too</span></label>` : ''}
+  // Inside Sukhi Play a link cannot leave the locked screen, so the address is
+  // written out for a grown-up to open on another device.
+  const gemini = inSukhiPlay
+    ? '<b>gemini.google.com</b> on another device'
+    : `<a class="out" href="${GEMINI}" target="_blank" rel="noopener">Google Gemini</a>`;
 
-    <div class="char-uses">
-      <div><p class="hint">Says hello when you open the studio</p>${posePicker(l.greeter, false, 'greeter')}</div>
-      <div><p class="hint">Goes on your stickers, labels and diary</p>${posePicker(l.pose, false, 'main-pose')}</div>
-    </div>
+  return `<section class="me-hero">
+      <div class="me-now">${img(mine.id, 'me-now-img')}</div>
+      <div class="me-say">
+        <span class="kicker">Your character</span>
+        <h2>${esc(mine.label)}</h2>
+        <p>Says hello when you open the studio, and goes on your stickers, labels and diary. Tap another below to change.</p>
+      </div>
+    </section>
+
+    <section class="card card--wide">
+      <div class="chars" role="radiogroup" aria-label="Your character">
+        ${list.map((p) => `<figure class="char${p.own ? ' char--own' : ''}${p.id === mine.id ? ' char--mine' : ''}">
+          <button type="button" class="char-pick" role="radio" data-choose="${p.id}" aria-checked="${p.id === mine.id}" aria-label="${esc(p.label)}">
+            ${faceImg(p.id, 'char-face')}
+            ${p.id === mine.id ? '<span class="char-badge">Yours</span>' : ''}
+          </button>
+          ${p.own
+            ? `<input class="char-name" data-rename="${p.id}" value="${esc(p.label)}" maxlength="20" aria-label="Name">
+               <div class="char-tools">
+                 <button type="button" class="mini" data-nudge="${p.id}" data-dy="-0.06" title="Move the face up" aria-label="Move up">${ICONS.up}</button>
+                 <button type="button" class="mini" data-nudge="${p.id}" data-dy="0.06" title="Move the face down" aria-label="Move down">${ICONS.down}</button>
+                 <button type="button" class="mini" data-nudge="${p.id}" data-zoom="0.88" title="Closer" aria-label="Closer">${ICONS.bigger}</button>
+                 <button type="button" class="mini" data-nudge="${p.id}" data-zoom="1.14" title="Further away" aria-label="Further away">${ICONS.smaller}</button>
+                 <button type="button" class="mini mini--bin" data-drop="${p.id}" title="Remove" aria-label="Remove">${ICONS.bin}</button>
+               </div>`
+            : `<figcaption>${esc(p.label)}</figcaption>`}
+        </figure>`).join('')}
+        <label class="char char--add" tabindex="0">
+          ${inSukhiPlay ? '' : '<input type="file" accept="image/*" multiple class="char-file">'}
+          <span class="char-plus">${ICONS.plus}</span>
+          <b>Add a character</b>
+          <small>${addHow}</small>
+        </label>
+      </div>
+      <p class="hint char-status" role="status"></p>
+      ${hasOwn() ? `<label class="tick"><input type="checkbox" class="keep-jazz" ${l.keepJazz ? 'checked' : ''}><span>Keep Jazz's characters too</span></label>` : ''}
+    </section>
 
     <details class="guide">
-      <summary>${ICONS.person}<span>For grown-ups: make a character from a photo</span></summary>
-      <p>Jazz's character was made this way. It takes about ten minutes.</p>
-      <ol>
-        <li>Open <b>gemini.google.com</b> and sign in.</li>
-        <li>Attach a clear, well-lit photo of your child, facing the camera.</li>
-        <li>Paste this and send it:
-          <div class="prompt"><p>${FIRST}</p><button type="button" class="quiet copy" data-copy="first">${ICONS.copy}<span>Copy</span></button></div>
-        </li>
-        <li>Not quite them? Say what is off, in plain words: "make the skin a few shades lighter", "the hair is longer", "keep the first one, but more playful". Small changes to a picture you like work better than starting again.</li>
-        <li>Download the picture you like, then come back here and add it.</li>
-        <li>For more poses, attach that picture and paste:
-          <div class="prompt"><p>${MORE}</p><button type="button" class="quiet copy" data-copy="more">${ICONS.copy}<span>Copy</span></button></div>
-          Change the last sentence for other poses: ${POSE_IDEAS}.
-        </li>
-      </ol>
-      <p class="guide-note">The flat magenta background is what lets this studio cut the character out neatly; any plain colour works, magenta just never appears on a child. When you use Gemini, the photo goes to Google. Nothing you add here leaves this device.</p>
-    </details>
-  </section>`;
+      <summary>
+        <span class="guide-icon">${ICONS.person}</span>
+        <span class="guide-say"><b>Make a character from a photo</b><small>For grown-ups · about ten minutes</small></span>
+        <span class="guide-open"><span class="when-shut">Show me how</span><span class="when-open">Hide</span></span>
+      </summary>
+      <div class="guide-body">
+        <p>Jazz's character was made this way, with ${gemini}.</p>
+        <ol>
+          <li>Open ${gemini} and sign in.</li>
+          <li>Attach a clear, well-lit photo of your child, facing the camera.</li>
+          <li>Paste this and send it:
+            <div class="prompt"><p>${FIRST}</p><button type="button" class="quiet copy" data-copy="first">${ICONS.copy}<span>Copy</span></button></div>
+          </li>
+          <li>Not quite them? Say what is off, in plain words: "make the skin a few shades lighter", "the hair is longer", "keep the first one, but more playful". Small changes to a picture you like work better than starting again.</li>
+          <li>Download the picture you like, then come back here and press <b>Add a character</b>.</li>
+          <li>For more poses, attach that picture and paste:
+            <div class="prompt"><p>${MORE}</p><button type="button" class="quiet copy" data-copy="more">${ICONS.copy}<span>Copy</span></button></div>
+            Change the last sentence for other poses: ${POSE_IDEAS}.
+          </li>
+        </ol>
+        <p class="guide-note">The flat magenta background is what lets this studio cut the character out neatly; any plain colour that is not on the character works, and magenta never is. When you use Gemini, the photo goes to Google. Nothing you add here leaves this device.</p>
+      </div>
+    </details>`;
 }
 
 /**
  * Turns pictures into characters, one at a time, and saves them. The first a
- * family ever adds becomes the one that says hello and the one on their
- * stationery, since Jazz is about to leave the list.
+ * family ever adds becomes their character, since Jazz is about to leave the
+ * list.
  */
 async function addAll (files: File[], main: HTMLElement): Promise<void> {
   const status = main.querySelector<HTMLElement>('.char-status');
@@ -117,7 +139,7 @@ async function addAll (files: File[], main: HTMLElement): Promise<void> {
       const id = `c-${crypto.randomUUID()}`;
       const n = poses().filter((p) => p.own).length + 1;
       await saveOwn({ id, label: `Character ${n}`, added: Date.now(), ...cut });
-      if (first) setLook({ greeter: id, pose: id });
+      if (first) setLook({ pose: id });
       added++;
     } catch (err) {
       failed = err instanceof Error ? err.message : 'Could not use that picture.';
@@ -133,7 +155,7 @@ async function addAll (files: File[], main: HTMLElement): Promise<void> {
 
 let pasteTarget: HTMLElement | null = null;
 
-// One listener for the whole page, pointed at whichever Make it yours is open.
+// One listener for the whole page, pointed at whichever Character tab is open.
 window.addEventListener('paste', (e) => {
   if (!pasteTarget || !document.body.contains(pasteTarget)) return;
   if ((e.target as HTMLElement | null)?.closest?.('input, textarea')) return;
@@ -143,7 +165,7 @@ window.addEventListener('paste', (e) => {
   void addAll(files, pasteTarget);
 });
 
-export function wireCharacters (main: HTMLElement): void {
+export function wireCharacterTab (main: HTMLElement): void {
   pasteTarget = main;
   const tile = main.querySelector<HTMLElement>('.char--add')!;
   main.querySelector<HTMLInputElement>('.char-file')?.addEventListener('change', (e) => {
@@ -157,8 +179,8 @@ export function wireCharacters (main: HTMLElement): void {
     void addAll([...(e.dataTransfer?.files ?? [])], main);
   });
 
-  wireChoice(main, 'greeter', (p) => { setLook({ greeter: p as PoseId }); refresh(); });
-  wireChoice(main, 'main-pose', (p) => { setLook({ pose: p as PoseId }); refresh(); });
+  main.querySelectorAll<HTMLButtonElement>('[data-choose]').forEach((b) =>
+    b.addEventListener('click', () => { setLook({ pose: b.dataset.choose! }); refresh(); }));
 
   main.querySelector<HTMLInputElement>('.keep-jazz')?.addEventListener('change', (e) => {
     const on = (e.target as HTMLInputElement).checked;

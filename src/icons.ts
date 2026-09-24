@@ -24,5 +24,7 @@ export const ICONS = {
   bigger: icon('<circle cx="11" cy="11" r="7"/><path d="M11 8v6M8 11h6M16 16l4 4"/>'),
   smaller: icon('<circle cx="11" cy="11" r="7"/><path d="M8 11h6M16 16l4 4"/>'),
   person: icon('<circle cx="12" cy="8" r="4"/><path d="M4 21c1-5 4.5-7 8-7s7 2 8 7"/>'),
+  install: icon('<rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M12 7v7M9 11l3 3 3-3"/>'),
+  close: icon('<path d="M6 6l12 12M18 6 6 18"/>'),
   scissors: icon('<circle cx="6" cy="7" r="3"/><circle cx="6" cy="17" r="3"/><path d="M8.5 8.5 20 18M8.5 15.5 20 6"/>')
 };

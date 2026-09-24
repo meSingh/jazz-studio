@@ -20,7 +20,8 @@ import { brandRoom } from './rooms/brand';
 import { playRoom, PLAYTHINGS } from './rooms/play';
 import { makesRoom } from './rooms/makes';
 import { yoursRoom } from './rooms/yours';
-import { install } from './install';
+import { install, installed } from './install';
+import { openKeep } from './rooms/keep';
 
 const app = document.getElementById('app')!;
 
@@ -32,7 +33,7 @@ const ROOMS: Record<Exclude<Room, 'home'>, { title: string; icon: string; blurb:
   brand: { title: 'My brand', icon: ICONS.star, blurb: 'Your own logo, and business cards', pose: 'cool', pattern: 'triangles' },
   play: { title: 'Play', icon: ICONS.play, blurb: 'Name posters, secret codes, story sparks, doodles', pose: 'idea', pattern: 'bolts' },
   makes: { title: 'My makes', icon: ICONS.camera, blurb: 'Photos of everything you have made', pose: 'wink', pattern: 'confetti' },
-  yours: { title: 'Make it yours', icon: ICONS.palette, blurb: 'Your colours, lettering and character', pose: 'portrait', pattern: 'waves' }
+  yours: { title: 'Make it yours', icon: ICONS.palette, blurb: 'Your character, your name, your colours', pose: 'portrait', pattern: 'waves' }
 };
 
 function route (): { room: Room; sub: string } {
@@ -43,11 +44,14 @@ function route (): { room: Room; sub: string } {
 function render (keepScroll = false): void {
   const { room, sub } = route();
   const y = window.scrollY;
+  // Start again can change this; the character list reads it every time.
+  setKeepJazz(look().keepJazz);
   const name = look().name;
   const thing = room === 'play' ? PLAYTHINGS.find((t) => t.id === sub) : undefined;
   document.title = room === 'home' ? `${name}'s Studio` : `${thing?.title ?? ROOMS[room].title} · ${name}'s Studio`;
   app.dataset.room = room;
   app.innerHTML = top(room, thing?.title) + '<main class="room"></main>';
+  app.querySelector('.keep-btn')?.addEventListener('click', openKeep);
   const main = app.querySelector('main')!;
   if (room === 'home') home(main);
   else if (room === 'stationery') stationeryRoom(main);
@@ -55,16 +59,20 @@ function render (keepScroll = false): void {
   else if (room === 'brand') brandRoom(main);
   else if (room === 'play') playRoom(main, sub);
   else if (room === 'makes') void makesRoom(main);
-  else yoursRoom(main);
+  else yoursRoom(main, sub);
   window.scrollTo(0, keepScroll ? y : 0);
 }
 
 function top (r: Room, thing?: string): string {
   const name = esc(look().name);
-  if (r === 'home') return `<header class="top"><span class="brand-tag">${name}'s Studio</span></header>`;
+  // Only when there is something to install: not on a home screen already,
+  // and not inside Sukhi Play.
+  const keep = installed() ? ''
+    : `<button type="button" class="keep-btn" title="Keep it on this device">${ICONS.install}<span>Keep it on this device</span></button>`;
+  if (r === 'home') return `<header class="top"><span class="brand-tag">${name}'s Studio</span>${keep}</header>`;
   const back = thing ? '#/play' : '#/';
   return `<header class="top"><a class="home-btn" href="${back}">${ICONS.back}<span>${thing ? 'Play' : 'Home'}</span></a>` +
-    `<h1 class="room-title">${ROOMS[r].icon}<span>${thing ?? ROOMS[r].title}</span></h1></header>`;
+    `<h1 class="room-title">${ROOMS[r].icon}<span>${thing ?? ROOMS[r].title}</span></h1>${keep}</header>`;
 }
 
 function home (main: HTMLElement): void {
@@ -79,7 +87,7 @@ function home (main: HTMLElement): void {
       `<span class="tile-title">${t.title}</span><span class="tile-blurb">${t.blurb}</span></a>`;
   }).join('');
   main.innerHTML = `<section class="hello">
-      <div class="hello-me">${img(l.greeter, 'hello-img')}</div>
+      <div class="hello-me">${img(l.pose, 'hello-img')}</div>
       <div class="hello-words"><h2>Hi ${esc(l.name)}</h2><p>What shall we make today?</p></div>
     </section>
     <section class="tiles">${tiles}</section>

@@ -2,12 +2,12 @@
  * Pieces every room uses: the colour strip, the pattern and pose pickers,
  * fields, the print button, and remembered choices.
  *
- * The colour strip sits beside the preview in every tool, so trying colours
- * is one tap from the thing being made rather than a trip to Make it yours
- * and back. It changes the same colours Make it yours does, so a colour
- * picked here is her colour everywhere.
+ * The strip above the preview in every tool holds the colours and the
+ * lettering, so trying either is one tap from the thing being made rather
+ * than a trip to Make it yours and back. A choice made there is hers
+ * everywhere.
  */
-import { look, setLook, useScheme, SCHEMES, PALETTE } from './look';
+import { look, setLook, useScheme, SCHEMES, PALETTE, LETTERING, type Lettering } from './look';
 import { PATTERNS, defs, type PatternName } from './patterns';
 import { poses, faceImg, type PoseId } from './character';
 import { ICONS } from './icons';
@@ -97,6 +97,9 @@ export function colourBar (sets = true): string {
       `<i style="background:${s.accent}"></i><i style="background:${s.accent2}"></i><span>${s.label}</span></button>`).join('')}</div></div>` : ''}
     <div class="cb-row"><span class="cb-label">Main</span><div class="cb-scroll">${swatches('accent')}</div></div>
     <div class="cb-row"><span class="cb-label">Second</span><div class="cb-scroll">${swatches('accent2')}</div></div>
+    <div class="cb-row"><span class="cb-label">Letters</span><div class="cb-scroll">${(Object.keys(LETTERING) as Lettering[]).map((k) =>
+      `<button type="button" class="letters" data-lettering="${k}" aria-pressed="${k === l.lettering}" title="${LETTERING[k].label}" ` +
+      `style="font-family:${LETTERING[k].stack.replace(/"/g, "'")};font-weight:${LETTERING[k].weight}">${esc(l.name.slice(0, 8) || 'Aa')}</button>`).join('')}</div></div>
   </section>`;
 }
 
@@ -107,6 +110,8 @@ export function wireColours (root: HTMLElement): void {
     b.addEventListener('click', () => { setLook({ accent: b.dataset.accent!, scheme: 'own' }); refresh(); }));
   root.querySelectorAll<HTMLButtonElement>('.colourbar [data-accent2]').forEach((b) =>
     b.addEventListener('click', () => { setLook({ accent2: b.dataset.accent2!, scheme: 'own' }); refresh(); }));
+  root.querySelectorAll<HTMLButtonElement>('.colourbar [data-lettering]').forEach((b) =>
+    b.addEventListener('click', () => { setLook({ lettering: b.dataset.lettering as Lettering }); refresh(); }));
   root.querySelectorAll<HTMLInputElement>('.colourbar [data-own]').forEach((input) => {
     input.addEventListener('input', () => setLook({ [input.dataset.own!]: input.value, scheme: 'own' }));
     input.addEventListener('change', refresh);

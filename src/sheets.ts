@@ -113,13 +113,15 @@ function moods (x: number, y: number, ink: string, accent: string): string {
   }).join('');
 }
 
-/** Her face in a small disc, for headers. */
-export const disc = (look: Look, cx: number, cy: number, r: number, id: string): string =>
-  `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${look.accent2}"/>` + face(look.pose, cx, cy - r * 0.04, r * 0.98, id);
+/** A character's face in a small disc, for headers and labels. */
+export const disc = (pose: PoseId, look: Look, cx: number, cy: number, r: number, id: string): string =>
+  `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${look.accent2}"/>` + face(pose, cx, cy - r * 0.04, r * 0.98, id);
 
 export function sheet (kind: Kind, o: Options, look: Look): string {
   const w = o.words.trim();
   const ink = inkOf(look);
+  // The character picked in this tool; "All of me" only means something on the Me stickers.
+  const me = o.pose === 'mix' ? look.pose : o.pose;
   const pat = (scale: number): string => defs('p1', o.pattern, look, scale) + defs('p2', o.pattern, swap(look), scale);
 
   switch (kind) {
@@ -182,7 +184,7 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
           `<rect x="${x + 6}" y="${y + 48}" width="28" height="136" rx="3" fill="#fff" opacity=".94"/>` +
           `<text transform="translate(${x + 20 + size * 0.35} ${y + 116}) rotate(-90)" text-anchor="middle" font-size="${size}" font-weight="800" fill="${ink}">${esc(text)}</text>`;
         body += o.me
-          ? `<circle cx="${x + 20}" cy="${y + 24}" r="15" fill="#fff"/>` + disc(look, x + 20, y + 24, 13.5, `b${i}`)
+          ? `<circle cx="${x + 20}" cy="${y + 24}" r="15" fill="#fff"/>` + disc(me, look, x + 20, y + 24, 13.5, `b${i}`)
           : `<circle cx="${x + 20}" cy="${y + 14}" r="3" fill="#fff" stroke="${ink}" stroke-width=".4"/>`;
         body += `<rect x="${x - 1.5}" y="${y - 1.5}" width="43" height="199" rx="5" ${CUT} stroke="${ink}" opacity=".35"/>`;
       }
@@ -200,7 +202,7 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
           const size = fit(text, 50, 11);
           body += `<rect x="${x}" y="${y}" width="85" height="31" rx="5" fill="#fff" stroke="${look.accent}" stroke-width=".8"/>` +
             `<path d="M${x + 5} ${y} H${x + 26} V${y + 31} H${x + 5} A5 5 0 0 1 ${x} ${y + 26} V${y + 5} A5 5 0 0 1 ${x + 5} ${y}Z" fill="url(#${i % 2 ? 'p2' : 'p1'})"/>`;
-          if (o.me) body += disc(look, x + 13, y + 15.5, 11, `l${i}`);
+          if (o.me) body += disc(me, look, x + 13, y + 15.5, 11, `l${i}`);
           body += `<text x="${x + 31}" y="${y + 10.5}" font-size="3.8" fill="${ink}" opacity=".7">This belongs to</text>` +
             `<text x="${x + 31}" y="${y + 23}" font-size="${size}" font-weight="800" fill="${ink}">${esc(text)}</text>` +
             `<rect x="${x - 1.5}" y="${y - 1.5}" width="88" height="34" rx="6" ${CUT} stroke="${ink}" opacity=".35"/>`;
@@ -219,7 +221,7 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
         `<text x="105" y="60" text-anchor="middle" font-size="${size}" font-weight="900" fill="${look.ink}">${esc(title)}</text>` +
         `<path d="M70 70 H140" stroke="${look.accent}" stroke-width="1.4" stroke-linecap="round"/>` +
         `<circle cx="105" cy="146" r="58" fill="${look.accent}" opacity=".2"/>` +
-        figure(o.pose === 'mix' ? look.pose : o.pose, 38, 78, 134, 128) +
+        figure(me, 38, 78, 134, 128) +
         `<rect x="26" y="206" width="158" height="1" fill="${look.accent}" opacity=".6"/>` +
         logo(look, 34, 214, 46) +
         `<g transform="rotate(-8 150 240)"><rect x="118" y="226" width="64" height="24" rx="3" fill="none" stroke="${look.accent2}" stroke-width="1.6"/>` +
@@ -234,7 +236,7 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
       const first = w ? 86 : 76;
       for (let y = first; y <= 272; y += 9) lines += `<path d="M30 ${y} H192" stroke="${look.accent}" stroke-width=".35" opacity=".55"/>`;
       let body = `<rect x="10" y="10" width="10" height="277" rx="3" fill="url(#p1)"/>`;
-      if (o.me) body += disc(look, 36, 28, 10.5, 'd1');
+      if (o.me) body += disc(me, look, 36, 28, 10.5, 'd1');
       const tx = o.me ? 51 : 30;
       body += `<text x="${tx}" y="27" font-size="10" font-weight="900" fill="${ink}">${esc(look.name)}'s Diary</text>` +
         `<text x="${tx}" y="34.5" font-size="4" fill="${look.accent}" font-weight="700" letter-spacing=".6">${esc(look.brand.tagline.toUpperCase())}</text>` +
@@ -253,7 +255,7 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
     case 'planner': {
       const title = w || `${look.name}'s Week`;
       let body = `<rect x="10" y="10" width="190" height="8" rx="3" fill="url(#p1)"/>`;
-      if (o.me) body += disc(look, 24, 33, 10, 'pl');
+      if (o.me) body += disc(me, look, 24, 33, 10, 'pl');
       const tx = o.me ? 38 : 15;
       body += `<text x="${tx}" y="36" font-size="${fit(title, 95, 11)}" font-weight="900" fill="${ink}">${esc(title)}</text>` +
         `<text x="135" y="36" font-size="4.5" fill="${ink}" opacity=".7">Week of</text><path d="M152 36.5 H195" stroke="${ink}" stroke-width=".4" opacity=".5"/>`;
@@ -279,7 +281,7 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
         body += `<rect x="15" y="${y0}" width="180" height="131" rx="6" fill="#fff" stroke="${look.accent}" stroke-width=".7"/>` +
           `<path d="M21 ${y0} H189 A6 6 0 0 1 195 ${y0 + 6} V${y0 + 20} H15 V${y0 + 6} A6 6 0 0 1 21 ${y0}Z" fill="url(#p${half + 1})"/>`;
         const tx = o.me ? 45 : 22;
-        if (o.me) body += `<circle cx="30" cy="${y0 + 20}" r="11" fill="#fff"/>` + disc(look, 30, y0 + 20, 9.8, `t${half}`);
+        if (o.me) body += `<circle cx="30" cy="${y0 + 20}" r="11" fill="#fff"/>` + disc(me, look, 30, y0 + 20, 9.8, `t${half}`);
         body += `<rect x="${tx - 3}" y="${y0 + 4.5}" width="${Math.min(145, title.length * size * 0.6 + 7)}" height="11" rx="5.5" fill="#fff"/>` +
           `<text x="${tx}" y="${y0 + 12.7}" font-size="${size}" font-weight="900" fill="${ink}">${esc(title)}</text>`;
         for (let r = 0; r < 10; r++) {
@@ -301,7 +303,7 @@ export function sheet (kind: Kind, o: Options, look: Look): string {
         body += `<path d="${shape}" fill="#fff" stroke="${look.accent}" stroke-width=".8"/>` +
           `<path d="M${x + 12} ${y} H${x + 34} V${y + 60} H${x + 12} L${x} ${y + 48} V${y + 12}Z" fill="url(#${i % 2 ? 'p2' : 'p1'})"/>` +
           `<circle cx="${x + 8}" cy="${y + 30}" r="2.6" fill="#fff" stroke="${ink}" stroke-width=".4"/>`;
-        if (o.me) body += disc(look, x + 22, y + 30, 10, `g${i}`);
+        if (o.me) body += disc(me, look, x + 22, y + 30, 10, `g${i}`);
         body += `<text x="${x + 40}" y="${y + 20}" font-size="5" font-weight="800" fill="${look.accent}">To</text>` +
           `<path d="M${x + 49} ${y + 20.5} H${x + 80}" stroke="${ink}" stroke-width=".35" opacity=".5"/>` +
           `<text x="${x + 40}" y="${y + 40}" font-size="5" font-weight="800" fill="${look.accent}">From</text>` +

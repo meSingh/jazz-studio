@@ -11,11 +11,12 @@ import { PROJECTS } from '../projects';
 import { wrapSheet, wrapFits, measureDiagram, fmt } from '../wrap';
 import {
   esc, field, printButton, wirePrint, wireChoice, colourBar, wireColours,
-  patternPicker, wirePatterns, refresh, remembered
+  patternPicker, wirePatterns, posePicker, refresh, remembered
 } from '../ui';
+import type { PoseId } from '../character';
 
-const state = remembered<{ project: string; width: number; height: number; tab: boolean; words: string; me: boolean }>(
-  'jazz-studio-box', { project: 'pencil-pot', width: 15.5, height: 10, tab: true, words: '', me: true });
+const state = remembered<{ project: string; width: number; height: number; tab: boolean; words: string; me: boolean; pose: PoseId | '' }>(
+  'jazz-studio-box', { project: 'pencil-pot', width: 15.5, height: 10, tab: true, words: '', me: true, pose: '' });
 
 /** Small drawings for the project cards. */
 const ART: Record<string, string> = {
@@ -56,19 +57,20 @@ export function boxRoom (main: HTMLElement): void {
       ${patternPicker()}
       ${field('Words on it (or leave empty)', `<input class="words" maxlength="24" placeholder="Pens" value="${esc(s.words)}">`)}
       <label class="tick"><input type="checkbox" class="me" ${s.me ? 'checked' : ''}><span>Put me on it</span></label>
+      ${s.me ? posePicker(s.pose || l.pose, false) : ''}
 
       <h2 class="box-title"><b>4</b>Print it and make it</h2>
       <p class="hint">Print at actual size, so it fits. Then:</p>
       <ol class="steps">${project.steps.map((st) => `<li>${st}</li>`).join('')}</ol>
       ${printButton()}
     </section>
-    <section class="preview">${colourBar()}<div class="print-area">${wrapSheet(wrap, l.pattern, s.words, s.me, l)}</div></section>
+    <section class="preview">${colourBar()}<div class="print-area">${wrapSheet(wrap, l.pattern, s.words, s.me, l, s.pose || l.pose)}</div></section>
   </div>`;
 
   const redraw = (): void => {
     const now = state.get();
     const w = { width: now.width, height: now.height, tab: now.tab, title: project.title };
-    main.querySelector('.print-area')!.innerHTML = wrapSheet(w, look().pattern, now.words, now.me, look());
+    main.querySelector('.print-area')!.innerHTML = wrapSheet(w, look().pattern, now.words, now.me, look(), now.pose || look().pose);
     main.querySelector('.measure')!.innerHTML = measureDiagram(project.shape, now.width, now.height, look());
     const fits = wrapFits(w);
     main.querySelector('.fit')!.textContent = fits === 'sideways' ? 'Turned sideways so it fits on the paper.'
@@ -90,7 +92,8 @@ export function boxRoom (main: HTMLElement): void {
   num('.w', 'width');
   num('.h', 'height');
   main.querySelector<HTMLInputElement>('.tab')!.addEventListener('change', (e) => { state.set({ tab: (e.target as HTMLInputElement).checked }); redraw(); });
-  main.querySelector<HTMLInputElement>('.me')!.addEventListener('change', (e) => { state.set({ me: (e.target as HTMLInputElement).checked }); redraw(); });
+  main.querySelector<HTMLInputElement>('.me')!.addEventListener('change', (e) => { state.set({ me: (e.target as HTMLInputElement).checked }); refresh(); });
+  wireChoice(main, 'pose', (p) => { state.set({ pose: p }); refresh(); });
   const words = main.querySelector<HTMLInputElement>('.words')!;
   words.addEventListener('input', () => { state.set({ words: words.value }); redraw(); });
   wirePatterns(main);

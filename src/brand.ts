@@ -37,7 +37,7 @@ export function logo (look: Look, x: number, y: number, size: number): string {
   const font = 'font-weight="800"';
   const initial = esc((look.name.trim()[0] ?? 'J').toUpperCase());
   const inner = (cx: number, cy: number, r: number): string => b.me
-    ? `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${look.accent2}"/>${face(look.pose, cx, cy, r * 0.94, `${id}f`)}`
+    ? `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${look.accent2}"/>${face(b.pose ?? look.pose, cx, cy, r * 0.94, `${id}f`)}`
     : `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${look.accent2}"/>` +
       `<text x="${cx}" y="${cy + r * 0.36}" text-anchor="middle" font-size="${r * 1.05}" fill="${on(look.accent2)}" ${font}>${initial}</text>`;
 
