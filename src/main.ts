@@ -20,6 +20,7 @@ import { brandRoom } from './rooms/brand';
 import { playRoom, PLAYTHINGS } from './rooms/play';
 import { makesRoom } from './rooms/makes';
 import { yoursRoom } from './rooms/yours';
+import { install } from './install';
 
 const app = document.getElementById('app')!;
 
@@ -81,9 +82,11 @@ function home (main: HTMLElement): void {
       <div class="hello-me">${img(l.greeter, 'hello-img')}</div>
       <div class="hello-words"><h2>Hi ${esc(l.name)}</h2><p>What shall we make today?</p></div>
     </section>
-    <section class="tiles">${tiles}</section>`;
+    <section class="tiles">${tiles}</section>
+    <p class="part">Part of <a href="https://sukhiplay.com" target="_blank" rel="noopener">Sukhi Play</a></p>`;
 }
 
+install();
 apply();
 onRefresh(() => render(true));
 window.addEventListener('hashchange', () => render());

@@ -99,6 +99,20 @@ def icon(cut, size=1024):
     return tile.resize((size, size), Image.LANCZOS)
 
 
+def maskable(cut, size=1024):
+    """Full bleed, no rounded corners, with her inside the middle 80%: phones cut their own shape."""
+    w = size
+    base = Image.new('RGBA', (w, w), NAVY)
+    glow = Image.new('RGBA', (w, w), (0, 0, 0, 0))
+    gr = int(w * 0.3)
+    ImageDraw.Draw(glow).ellipse([w / 2 - gr, w * 0.45 - gr, w / 2 + gr, w * 0.45 + gr], fill=GLOW)
+    base.alpha_composite(glow.filter(ImageFilter.GaussianBlur(w * 0.06)))
+    scale = (w * 0.78) / cut.width
+    fig = cut.resize((round(cut.width * scale), round(cut.height * scale)), Image.LANCZOS)
+    base.alpha_composite(fig, ((w - fig.width) // 2, max(int(w * 0.12), w - fig.height)))
+    return base
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument('image')
@@ -120,6 +134,9 @@ def main():
         for size, name in ((512, 'icon-512.png'), (192, 'icon-192.png'), (180, 'apple-touch-icon.png'), (64, 'favicon.png')):
             big.resize((size, size), Image.LANCZOS).save(os.path.join(PUBLIC, name))
         big.save(os.path.join(HERE, 'scripts', 'icon-1024.png'))
+        safe = maskable(cut)
+        for size in (192, 512):
+            safe.resize((size, size), Image.LANCZOS).save(os.path.join(PUBLIC, f'icon-maskable-{size}.png'))
         print('app icons written to public/')
 
 

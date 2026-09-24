@@ -233,6 +233,9 @@ img { display: block; max-width: 100%; }
   clip-path: polygon(3% 0, 97% 4%, 100% 50%, 96% 100%, 2% 96%, 0 50%);
 }
 
+.part { margin: 34px 0 0; text-align: center; font-size: 14px; opacity: .6; }
+.part a { color: inherit; font-weight: 800; }
+
 /* Workbench: choices one side, the sheet the other ----------------- */
 
 .workbench {
